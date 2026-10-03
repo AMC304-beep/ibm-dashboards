@@ -212,11 +212,9 @@
     <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px;">👤 Datos del Colaborador</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
       <div>
-        <label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">ADCAR <span id="adcarSpin" style="display:none;">⏳</span></label>
-        <select id="s1adcar" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fafbff;" onchange="propagate()">
-          <option value="">— Seleccionar —</option>
-        </select>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px;"><a href="#" onclick="loadAdcars();return false;" style="color:var(--accent);">↻ Recargar ADCARs</a></div>
+        <label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Nombre ADCAR *</label>
+        <input type="text" id="s1adcar" placeholder="Ej: Andrea Ospina Soto" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fafbff;" oninput="propagate()"/>
+<div style="font-size:10px;color:var(--muted);margin-top:3px;">Escribe el nombre completo tal como aparece en Monday</div>
       </div>
       <div>
         <label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Correo IBM *</label>
@@ -712,7 +710,7 @@ function getCollab(){return{adcar:(document.getElementById('s1adcar').value||'')
 async function enviarAMonday(e){
   const btn=document.getElementById('btnEnviar');
   const c=getCollab();
-  if(!c.email&&!c.adcar){showToast('⚠️ Ingresa tu correo IBM o selecciona tu ADCAR','err');document.getElementById('s1email').focus();return;}
+  if(!c.adcar.trim()){showToast('⚠️ Ingresa el nombre del ADCAR','err');document.getElementById('s1adcar').focus();return;}
   if(c.email&&!c.email.endsWith('@ibm.com')){showToast('⚠️ El correo debe ser @ibm.com','err');return;}
   // c.period es calculado automáticamente (campo oculto), no requiere validación manual
   const ts=document.getElementById('sel-time').value;
@@ -738,23 +736,11 @@ async function enviarAMonday(e){
     if(parts.length) cv[COL.comentarios]=parts.join(' | ');
     pset(30,'Buscando registro existente en Monday...');
     const nm=(c.adcar||c.email)+' \u00b7 '+c.period;
-    // Buscar id exacto desde mapa cargado al inicio (sin duplicar)
+    // Crear siempre una fila nueva con el nombre del ADCAR y todas las columnas
+    pset(40,'Creando nueva fila en Monday...');
     let iid=null;
-    const adcarId=c.adcar&&window._adcarMap&&window._adcarMap[c.adcar];
-    if(adcarId){
-      pset(40,'Actualizando fila existente en Monday...');
-      try{
-        const cvStr=JSON.stringify(cv);
-        await mq(`mutation{change_multiple_column_values(item_id:${adcarId},board_id:${BOARD_A},column_values:${JSON.stringify(cvStr)}){id}}`);
-        iid=adcarId;
-        showToast('\u2705 Fila actualizada en Monday','ok');
-      }catch(se){console.warn('Update err:',se);}
-    }
-    if(!iid){
-      pset(40,'Creando registro en Monday...');
-      const res=await mc(BOARD_A,nm,cv);
-      iid=res?.create_item?.id;
-    }
+    const res=await mc(BOARD_A,c.adcar||nm,cv);
+    iid=res?.create_item?.id;
     pset(55,'Registro creado. Subiendo soportes…');
     const colMap=[...upl.time.map(f=>({f,col:COL.soporte_time})),...upl.sf.map(f=>({f,col:COL.soporte_sf})),...upl.hp.map(f=>({f,col:COL.soporte_hp}))];
     let uploaded=0;
