@@ -653,54 +653,49 @@ async function loadAdcars(){
     const meta=await mq(`{boards(ids:${BOARD_A}){columns{id title type}}}`);
     const cols=meta?.boards?.[0]?.columns||[];
     const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-    const ac=cols.find(c=>norm(c.title).includes('adcar'));
     const gc=cols.find(c=>norm(c.title).includes('gerencia')||norm(c.title).includes('region'));
-    if(ac) COL.adcar=ac.id;
     if(gc) COL.gerencia=gc.id;
-    // semana is hardcoded as text_mm7nfrzh — no discovery needed
-
-    let cur=null; const adcars=new Set(); const gers=new Set();
+    let cur=null;
+    const adcarMap={};
+    const gers=new Set();
     do{
       const ca=cur?`, cursor:"${cur}"`:'';
-      const colIds=[ac?.id||'name', gc?.id].filter(Boolean).map(x=>`"${x}"`).join(',');
-      const pg=await mq(`{boards(ids:${BOARD_A}){items_page(limit:500${ca}){cursor items{name column_values(ids:[${colIds}]){id text}}}}}`)
+      const colIds=gc?[`"${gc.id}"`]:[];
+      const colQ=colIds.length?`column_values(ids:[${colIds.join(',')}]){id text}`:'';
+      const pg=await mq(`{boards(ids:${BOARD_A}){items_page(limit:500${ca}){cursor items{id name ${colQ}}}}}`);
       const pd=pg?.boards?.[0]?.items_page;
       cur=pd?.cursor||null;
       (pd?.items||[]).forEach(it=>{
-        const av=it.column_values.find(c=>c.id===(ac?.id));
-        const gv=gc?it.column_values.find(c=>c.id===gc.id):null;
-        const atxt=(av?.text||it.name||'').trim();
-        if(atxt) adcars.add(atxt);
-        if(gv?.text) gers.add(gv.text.trim());
+        const nm=(it.name||'').trim();
+        if(nm&&nm!=='Item 1'){
+          adcarMap[nm]=it.id;
+          if(gc){const gv=it.column_values&&it.column_values.find(c=>c.id===gc.id);if(gv?.text)gers.add(gv.text.trim());}
+        }
       });
     }while(cur);
-
+    window._adcarMap=adcarMap;
+    const adcars=Object.keys(adcarMap);
     const cur2=sel.value;
-    sel.innerHTML='<option value="">— Seleccionar ADCAR —</option>';
-    [...adcars].sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{
-      const o=document.createElement('option');o.value=v;o.textContent=v;
-      if(v===cur2)o.selected=true;sel.appendChild(o);
+    sel.innerHTML='<option value="">\u2014 Seleccionar ADCAR \u2014</option>';
+    adcars.sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{
+      const o=document.createElement('option');
+      o.value=v;o.textContent=v;
+      o.setAttribute('data-id',adcarMap[v]);
+      if(v===cur2)o.selected=true;
+      sel.appendChild(o);
     });
-    // Update mn-adcar select (Modalidad)
     ['mn-adcar'].forEach(id=>{
-      const s2=document.getElementById(id); if(!s2)return;
-      s2.innerHTML='<option value="">— Seleccionar —</option>';
-      [...adcars].sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{
-        const o=document.createElement('option');o.value=v;o.textContent=v;s2.appendChild(o);
-      });
+      const s2=document.getElementById(id);if(!s2)return;
+      s2.innerHTML='<option value="">\u2014 Seleccionar \u2014</option>';
+      adcars.sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s2.appendChild(o);});
     });
-
     const gs=document.getElementById('s1ger');
     const g2=gs.value;
-    gs.innerHTML='<option value="">— Seleccionar —</option>';
-    [...gers].sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{
-      const o=document.createElement('option');o.value=v;o.textContent=v;
-      if(v===g2)o.selected=true;gs.appendChild(o);
-    });
-
-    if(!adcars.size) showToast('⚠️ No se encontraron Adcars en el tablero','err');
-    else showToast(`✅ ${adcars.size} Adcars cargados del Board ${BOARD_A}`,'ok');
-  }catch(e){console.error(e);showToast('❌ Error al cargar Adcars: '+e.message,'err');}
+    gs.innerHTML='<option value="">\u2014 Seleccionar \u2014</option>';
+    [...gers].sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v===g2)o.selected=true;gs.appendChild(o);});
+    if(!adcars.length)showToast('\u26a0\ufe0f No se encontraron ADCARs en el tablero','err');
+    else showToast(`\u2705 ${adcars.length} ADCARs cargados del Board ${BOARD_A}`,'ok');
+  }catch(e){console.error(e);showToast('\u274c Error al cargar ADCARs: '+e.message,'err');}
   finally{sp.style.display='none';gsp.style.display='none';}
 }
 
@@ -743,24 +738,18 @@ async function enviarAMonday(e){
     if(parts.length) cv[COL.comentarios]=parts.join(' | ');
     pset(30,'Buscando registro existente en Monday...');
     const nm=(c.adcar||c.email)+' \u00b7 '+c.period;
-    // Search for existing item by ADCAR name in board
+    // Buscar id exacto desde mapa cargado al inicio (sin duplicar)
     let iid=null;
-    try{
-      const searchData=await mq(`{boards(ids:[${BOARD_A}]){items_page(limit:200){items{id name}}}}`);
-      const items=searchData?.boards?.[0]?.items_page?.items||[];
-      const adcarVal=(c.adcar||'').trim().toLowerCase();
-      const existing=items.find(it=>{
-        const n=(it.name||'').toLowerCase();
-        return adcarVal && (n.startsWith(adcarVal+' ') || n===adcarVal || n.includes('\u00b7 '+adcarVal+' ') || n.split(/[\s\u00b7]+/)[0]===adcarVal);
-      });
-      if(existing){
-        pset(40,'Actualizando fila existente en Monday...');
+    const adcarId=c.adcar&&window._adcarMap&&window._adcarMap[c.adcar];
+    if(adcarId){
+      pset(40,'Actualizando fila existente en Monday...');
+      try{
         const cvStr=JSON.stringify(cv);
-        await mq(`mutation{change_multiple_column_values(item_id:${existing.id},board_id:${BOARD_A},column_values:${JSON.stringify(cvStr)}){id}}`);
-        iid=existing.id;
+        await mq(`mutation{change_multiple_column_values(item_id:${adcarId},board_id:${BOARD_A},column_values:${JSON.stringify(cvStr)}){id}}`);
+        iid=adcarId;
         showToast('\u2705 Fila actualizada en Monday','ok');
-      }
-    }catch(se){console.warn('Search/update err:',se);}
+      }catch(se){console.warn('Update err:',se);}
+    }
     if(!iid){
       pset(40,'Creando registro en Monday...');
       const res=await mc(BOARD_A,nm,cv);
