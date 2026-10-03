@@ -671,7 +671,7 @@ async function loadAdcars(){
         const nm=(it.name||'').trim();
         if(nm&&nm!=='Item 1'){
           adcarMap[nm]=it.id;
-          if(gc){const gv=it.column_values&&it.column_values.find(c=>c.id===gc.id);if(gv?.text)gers.add(gv.text.trim());}
+if(gc){const gv=it.column_values&&it.column_values.find(c=>c.id===gc.id);} // gers no se usa
         }
       });
     }while(cur);
@@ -691,10 +691,10 @@ async function loadAdcars(){
       s2.innerHTML='<option value="">\u2014 Seleccionar \u2014</option>';
       adcars.sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s2.appendChild(o);});
     });
-    const gs=document.getElementById('s1ger');
-    const g2=gs.value;
-    gs.innerHTML='<option value="">\u2014 Seleccionar \u2014</option>';
-    [...gers].sort((a,b)=>a.localeCompare(b,'es')).forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v===g2)o.selected=true;gs.appendChild(o);});
+// Region select tiene opciones fijas de Monday - no sobreescribir
+// const g2=gs.value; // eliminado
+// gs.innerHTML eliminado - opciones fijas
+// [...gers] eliminado - opciones fijas
     if(!adcars.length)showToast('\u26a0\ufe0f No se encontraron ADCARs en el tablero','err');
     else showToast(`\u2705 ${adcars.length} ADCARs cargados del Board ${BOARD_A}`,'ok');
   }catch(e){console.error(e);showToast('\u274c Error al cargar ADCARs: '+e.message,'err');}
