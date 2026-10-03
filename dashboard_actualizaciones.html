@@ -221,9 +221,9 @@
         <input type="email" id="s1email" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fafbff;" placeholder="usuario@ibm.com"/>
       </div>
       <div>
-        <label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Región *</label>
+<label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Region *</label>
 <select id="s1ger" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fafbff;">
-<option value="">? Seleccionar ?</option>
+<option value="">-- Seleccionar Region --</option>
 <option value="NOR-PAC">NOR-PAC</option>
 <option value="NORESTE">NORESTE</option>
 <option value="CENTRO - SUR">CENTRO - SUR</option>
@@ -1251,7 +1251,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('k-week').textContent=`${fmt(mon)} – ${fmt(fri)} ${now.getFullYear()}`;
   document.getElementById('s1period').value=`Semana ${getWeek(now)} – ${now.getFullYear()}`;
   document.getElementById('ot-date').valueAsDate=now;
-  document.getElementById('s1fecha').valueAsDate=now;
+// s1fecha se establece por setViernesDate() abajo
   updSummary();
 
   ['ot-ini','ot-fin'].forEach(id=>document.getElementById(id).addEventListener('change',calcOT));
