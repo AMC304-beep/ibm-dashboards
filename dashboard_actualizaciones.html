@@ -221,14 +221,18 @@
         <input type="email" id="s1email" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fafbff;" placeholder="usuario@ibm.com"/>
       </div>
       <div>
-        <label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Región <span id="gerSpin" style="display:none;">⏳</span></label>
-        <select id="s1ger" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fafbff;">
-          <option value="">— Seleccionar —</option>
-        </select>
+        <label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Región *</label>
+<select id="s1ger" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fafbff;">
+<option value="">? Seleccionar ?</option>
+<option value="NOR-PAC">NOR-PAC</option>
+<option value="NORESTE">NORESTE</option>
+<option value="CENTRO - SUR">CENTRO - SUR</option>
+<option value="PACIFICO">PACIFICO</option>
+</select>
       </div>
       <div>
-        <label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Fecha de Solicitud</label>
-        <input type="date" id="s1fecha" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fafbff;"/>
+<label style="display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Fecha Solicitud (Viernes)</label>
+<input type="date" id="s1fecha" readonly style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#f0fdf4;color:#065f46;font-weight:600;" title="Se establece automáticamente al viernes de la semana"/>
       </div>
       <!-- Semana oculta -->
       <input type="hidden" id="s1period"/>
@@ -1254,7 +1258,26 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('ot-manual').addEventListener('input',calcOT);
 
   checkBackend();
-  loadAdcars().catch(()=>{});
+  
+// Auto-establecer fecha al viernes de la semana actual
+function setViernesDate(){
+  const today = new Date();
+  const day = today.getDay(); // 0=dom,1=lun,...,5=vie,6=sab
+  const diff = day <= 5 ? 5 - day : 6; // dias hasta el viernes
+  const friday = new Date(today);
+  friday.setDate(today.getDate() + diff);
+  const yyyy = friday.getFullYear();
+  const mm = String(friday.getMonth()+1).padStart(2,'0');
+  const dd = String(friday.getDate()).padStart(2,'0');
+  const fVal = yyyy+'-'+mm+'-'+dd;
+  const el = document.getElementById('s1fecha');
+  if(el) el.value = fVal;
+  // Actualizar tambi?n el campo oculto de periodo
+  const per = document.getElementById('s1period');
+  if(per) per.value = fVal;
+}
+loadAdcars().catch(()=>{});
+setViernesDate();
 
   // Close modals on backdrop click
   document.querySelectorAll('.mbg').forEach(bg=>{
