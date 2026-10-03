@@ -98,9 +98,9 @@
           <form id="createForm" onsubmit="handleCreateItem(event)" class="space-y-3 text-xs">
             <div>
               <label class="block font-semibold text-slate-600 mb-1 uppercase tracking-wide text-[10px]">ADCAR *</label>
-              <select id="c_adcar" required class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-slate-50" onchange="onAdcarSelected()">
-                <option value="">- Seleccionar ADCAR -</option>
-              </select>
+              <input type="text" id="c_adcar" required
+                class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-slate-50"
+                placeholder="Escribe el nombre del ADCAR"/>
             </div>
             <div>
               <label class="block font-semibold text-slate-600 mb-1 uppercase tracking-wide text-[10px]">Motivo</label>
@@ -633,16 +633,13 @@ function buildColVals(pfx) {
 
 async function handleCreateItem(ev) {
   ev.preventDefault();
-  const sel = document.getElementById('c_adcar');
-  const itemId = sel.value;
-  if(!itemId) { showToast('Selecciona un ADCAR', 'warn'); return; }
-  const item = allItems.find(it=>it.id===itemId);
-  if(!item) { showToast('ADCAR no encontrado', false); return; }
+  const adcarName = document.getElementById('c_adcar').value.trim();
+  if(!adcarName) { showToast('Escribe el nombre del ADCAR', 'warn'); return; }
   const cols = buildColVals('c');
   setProgress(30);
   try {
     const colJson = JSON.stringify(JSON.stringify(cols));
-    const mutation = 'mutation { change_multiple_column_values(board_id:'+BOARD_ID+', item_id:'+itemId+', column_values:'+colJson+') { id } }';
+    const mutation = 'mutation { create_item(board_id:'+BOARD_ID+', item_name:"'+adcarName.replace(/"/g,'')+'", column_values:'+colJson+') { id name } }';
     await mq(mutation);
     setProgress(70);
     if(ausFiles.length) {
@@ -656,7 +653,7 @@ async function handleCreateItem(ev) {
       }
     }
     setProgress(100);
-    showToast('Guardado en Monday: '+item.name, true);
+    showToast('Ausencia registrada para: '+adcarName, true);
     document.getElementById('createForm').reset();
     ausFiles = [];
     document.getElementById('aus-file-list').innerHTML = '';
