@@ -1,0 +1,403 @@
+!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IBM Dashboards - Presentacion del Proyecto</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:#0a1628;color:#fff;overflow:hidden;height:100vh;width:100vw;}
+.deck{position:relative;width:100vw;height:100vh;overflow:hidden;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 60px;opacity:0;transform:translateX(80px);transition:all .5s cubic-bezier(.4,0,.2,1);pointer-events:none;text-align:center;}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}
+.slide.exit{opacity:0;transform:translateX(-80px);}
+.slide::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;}
+.bg-dark{background:linear-gradient(135deg,#0a1628 0%,#0d2050 100%);}
+.bg-blue{background:linear-gradient(135deg,#0f3d9e 0%,#0f62fe 100%);}
+.bg-green{background:linear-gradient(135deg,#064e3b 0%,#059669 100%);}
+.bg-purple{background:linear-gradient(135deg,#2d1b6e 0%,#7c3aed 100%);}
+.bg-orange{background:linear-gradient(135deg,#92400e 0%,#d97706 100%);}
+.bg-teal{background:linear-gradient(135deg,#134e4a 0%,#0d9488 100%);}
+.ibm-logo{display:flex;flex-direction:column;gap:4px;margin-bottom:18px;}
+.ibm-row{display:flex;gap:3px;}
+.ibm-bar{height:5px;background:#fff;border-radius:2px;}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.65;margin-bottom:10px;}
+.hero-title{font-size:clamp(30px,4.5vw,58px);font-weight:900;line-height:1.1;margin-bottom:14px;}
+.hero-sub{font-size:clamp(13px,1.8vw,18px);opacity:.8;max-width:660px;line-height:1.6;}
+.slide-title{font-size:clamp(20px,3vw,38px);font-weight:900;margin-bottom:6px;line-height:1.2;}
+.slide-sub{font-size:13px;opacity:.65;margin-bottom:24px;}
+.hbar{width:50px;height:4px;background:rgba(255,255,255,.45);border-radius:2px;margin:0 auto 20px;}
+.cards{display:grid;gap:14px;width:100%;}
+.cols2{grid-template-columns:repeat(2,1fr);}
+.cols3{grid-template-columns:repeat(3,1fr);}
+.cols4{grid-template-columns:repeat(4,1fr);}
+.card{background:rgba(255,255,255,.09);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:18px;text-align:left;}
+.card-icon{font-size:24px;margin-bottom:8px;}
+.card-title{font-size:12px;font-weight:800;margin-bottom:5px;}
+.card-text{font-size:11px;opacity:.72;line-height:1.55;}
+.card-num{font-size:34px;font-weight:900;margin-bottom:3px;}
+.steps{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px;text-align:left;}
+.step-row{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.11);border-radius:11px;padding:11px 14px;}
+.step-circle{width:26px;height:26px;min-width:26px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;}
+.step-info strong{font-size:12px;font-weight:700;display:block;margin-bottom:2px;}
+.step-info span{font-size:11px;opacity:.72;}
+.tag{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;margin:3px;}
+.pill{padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;}
+.board-demo{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:12px;padding:12px;width:100%;max-width:760px;text-align:left;}
+.board-header{font-size:10px;font-weight:700;opacity:.6;margin-bottom:8px;}
+.board-row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);align-items:center;font-size:10px;}
+.board-row:last-child{border-bottom:none;}
+.board-cell{flex:1;opacity:.85;}
+.board-cell.name{font-weight:700;opacity:1;}
+.url-box{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:12px 20px;font-family:'Courier New',monospace;font-size:clamp(13px,1.8vw,17px);color:#60a5fa;font-weight:700;letter-spacing:.5px;margin:8px 0;}
+.access-flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:16px;}
+.flow-box{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:10px 16px;font-size:12px;text-align:center;}
+.flow-arrow{font-size:18px;opacity:.5;}
+#nav{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;align-items:center;}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.28);cursor:pointer;transition:all .3s;}
+.dot.on{background:#fff;width:22px;border-radius:3px;}
+#prev,#next{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);color:#fff;width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+#prev:hover,#next:hover{background:rgba(255,255,255,.26);}
+#counter{position:fixed;top:18px;right:22px;font-size:11px;font-weight:700;opacity:.38;z-index:100;letter-spacing:1px;}
+#hint{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);font-size:10px;opacity:.3;letter-spacing:.5px;transition:opacity 1.5s;white-space:nowrap;}
+@keyframes popIn{from{opacity:0;transform:scale(.84)}to{opacity:1;transform:scale(1)}}
+.slide.active .card{animation:popIn .38s ease both;}
+.slide.active .card:nth-child(1){animation-delay:.04s}
+.slide.active .card:nth-child(2){animation-delay:.09s}
+.slide.active .card:nth-child(3){animation-delay:.14s}
+.slide.active .card:nth-child(4){animation-delay:.19s}
+.slide.active .step-row{animation:popIn .33s ease both;}
+.slide.active .step-row:nth-child(1){animation-delay:.04s}
+.slide.active .step-row:nth-child(2){animation-delay:.09s}
+.slide.active .step-row:nth-child(3){animation-delay:.14s}
+.slide.active .step-row:nth-child(4){animation-delay:.19s}
+.slide.active .step-row:nth-child(5){animation-delay:.24s}
+.slide.active .flow-box{animation:popIn .38s ease both;}
+.slide.active .flow-box:nth-child(1){animation-delay:.05s}
+.slide.active .flow-box:nth-child(3){animation-delay:.15s}
+.slide.active .flow-box:nth-child(5){animation-delay:.25s}
+.slide.active .flow-box:nth-child(7){animation-delay:.35s}
+@media(max-width:700px){.cols3,.cols4{grid-template-columns:repeat(2,1fr);}.cols2{grid-template-columns:1fr;}.slide{padding:24px;}}
+</style>
+</head>
+<body>
+<div id="counter">1 / 9</div>
+<div id="hint">&#8592; &#8594; teclado &nbsp;|&nbsp; swipe en movil &nbsp;|&nbsp; clic en los puntos</div>
+<div class="deck">
+
+<!-- SLIDE 1: PORTADA -->
+<div class="slide bg-dark active" data-index="0">
+  <div class="ibm-logo">
+    <div class="ibm-row"><div class="ibm-bar" style="width:44px"></div></div>
+    <div class="ibm-row"><div class="ibm-bar" style="width:14px"></div><div class="ibm-bar" style="width:14px"></div></div>
+    <div class="ibm-row"><div class="ibm-bar" style="width:44px"></div></div>
+  </div>
+  <div class="eyebrow">IBM Colombia &middot; Equipo ADCARs</div>
+  <h1 class="hero-title">Sistema de<br/><span style="color:#60a5fa;">Gestion Digital</span><br/>para ADCARs</h1>
+  <div class="hbar" style="margin:18px auto;"></div>
+  <p class="hero-sub">Dashboards conectados en tiempo real con Monday.com para gestionar ausencias, actualizaciones semanales, horas extras y modalidad de trabajo.</p>
+  <div style="display:flex;gap:8px;margin-top:24px;flex-wrap:wrap;justify-content:center;">
+    <span class="tag" style="background:rgba(96,165,250,.18);color:#93c5fd;">&#127958; Ausencias</span>
+    <span class="tag" style="background:rgba(52,211,153,.18);color:#6ee7b7;">&#128202; Actualizaciones</span>
+    <span class="tag" style="background:rgba(196,181,253,.18);color:#c4b5fd;">&#9201; Horas Extras</span>
+    <span class="tag" style="background:rgba(253,186,116,.18);color:#fde68a;">&#127968; Modalidad</span>
+  </div>
+</div>
+
+<!-- SLIDE 2: EL PROBLEMA -->
+<div class="slide bg-blue" data-index="1">
+  <div class="eyebrow">Por que lo construimos</div>
+  <h2 class="slide-title">El problema que resolvimos</h2>
+  <p class="slide-sub">Antes del sistema, esto era el dia a dia del equipo</p>
+  <div class="cards cols2" style="max-width:760px;">
+    <div class="card">
+      <div class="card-icon">&#128139;</div>
+      <div class="card-title">Correos perdidos</div>
+      <div class="card-text">Las solicitudes de ausencia se enviaban por correo y se perdian en la bandeja. Sin registro centralizado ni trazabilidad.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128203;</div>
+      <div class="card-title">Excel desactualizados</div>
+      <div class="card-text">Las actualizaciones semanales vivian en hojas de Excel sin sincronizacion. Cada quien tenia una version distinta.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#9201;</div>
+      <div class="card-title">Tiempo perdido</div>
+      <div class="card-text">Cada ADCAR reportaba horas extras y modalidad por separado, duplicando el esfuerzo del lider del equipo.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#10060;</div>
+      <div class="card-title">Sin visibilidad</div>
+      <div class="card-text">No habia forma de saber quien estaba ausente, en que modalidad trabajaba o cuantas horas extras acumulaba.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: LA SOLUCION -->
+<div class="slide bg-dark" data-index="2">
+  <div class="eyebrow">Nuestra solucion</div>
+  <h2 class="slide-title">Dos dashboards,<br/><span style="color:#60a5fa;">todo conectado</span></h2>
+  <div class="hbar"></div>
+  <div class="cards cols2" style="max-width:840px;">
+    <div class="card" style="border-color:rgba(96,165,250,.38);">
+      <div class="card-icon">&#127958;</div>
+      <div class="card-title" style="font-size:14px;color:#93c5fd;">Dashboard de Ausencias</div>
+      <div class="card-text">Solicita ausencias, calcula dias automaticamente, adjunta soporte, aprueba o rechaza. Todo sincronizado con Monday al instante.</div>
+      <div style="margin-top:9px;"><span class="tag" style="background:rgba(255,255,255,.09);color:#cbd5e1;font-size:9px;">Board 18432588237 - Forecast Ausencias</span></div>
+    </div>
+    <div class="card" style="border-color:rgba(52,211,153,.38);">
+      <div class="card-icon">&#128202;</div>
+      <div class="card-title" style="font-size:14px;color:#6ee7b7;">Dashboard de Actualizaciones</div>
+      <div class="card-text">Registra avance semanal, horas extras por semana y modalidad de trabajo. Una fila por ADCAR, siempre al dia en Monday.</div>
+      <div style="margin-top:9px;"><span class="tag" style="background:rgba(255,255,255,.09);color:#cbd5e1;font-size:9px;">Boards 18432741374 &middot; 18433232131</span></div>
+    </div>
+  </div>
+  <div style="margin-top:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 20px;font-size:11px;opacity:.7;">
+    Servidor Node.js local &nbsp;&middot;&nbsp; Proxy seguro hacia Monday API &nbsp;&middot;&nbsp; Token protegido en .env &nbsp;&middot;&nbsp; 27 ADCARs registrados
+  </div>
+</div>
+
+<!-- SLIDE 4: COMO ACCEDEN LOS ADCARS -->
+<div class="slide bg-teal" data-index="3">
+  <div class="eyebrow">Acceso del equipo</div>
+  <h2 class="slide-title">&#127760; Como acceden los ADCARs</h2>
+  <p class="slide-sub">Sin instalar nada &mdash; solo el navegador y la red IBM</p>
+  <div class="access-flow">
+    <div class="flow-box">
+      <div style="font-size:22px;margin-bottom:6px;">&#128100;</div>
+      <div style="font-size:11px;font-weight:700;">ADCAR</div>
+      <div style="font-size:10px;opacity:.7;">Chrome o Edge</div>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box" style="border-color:rgba(255,255,255,.35);">
+      <div style="font-size:22px;margin-bottom:6px;">&#128246;</div>
+      <div style="font-size:11px;font-weight:700;">Red IBM (WiFi)</div>
+      <div style="font-size:10px;opacity:.7;">Misma red corporativa</div>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box" style="border-color:rgba(96,165,250,.4);">
+      <div style="font-size:22px;margin-bottom:6px;">&#128187;</div>
+      <div style="font-size:11px;font-weight:700;">PC de Angela</div>
+      <div style="font-size:10px;opacity:.7;">Servidor activo</div>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box" style="border-color:rgba(52,211,153,.4);">
+      <div style="font-size:22px;margin-bottom:6px;">&#127758;</div>
+      <div style="font-size:11px;font-weight:700;">Monday.com</div>
+      <div style="font-size:10px;opacity:.7;">Datos en tiempo real</div>
+    </div>
+  </div>
+  <div style="margin-top:24px;">
+    <div style="font-size:11px;opacity:.65;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">URL que deben escribir los ADCARs</div>
+    <div class="url-box">http://10.230.141.243:3000/index_v2.html</div>
+  </div>
+  <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;justify-content:center;">
+    <div style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:8px 14px;font-size:11px;">&#9989; WiFi IBM en oficina</div>
+    <div style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:8px 14px;font-size:11px;">&#9989; VPN IBM activa desde casa</div>
+    <div style="background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);border-radius:8px;padding:8px 14px;font-size:11px;">&#10060; VPN Cemex / red externa</div>
+  </div>
+</div>
+
+<!-- SLIDE 5: DASHBOARD AUSENCIAS -->
+<div class="slide bg-green" data-index="4">
+  <div class="eyebrow">Dashboard 1</div>
+  <h2 class="slide-title">Gestion de Ausencias</h2>
+  <p class="slide-sub">Flujo completo en 5 pasos</p>
+  <div class="steps">
+    <div class="step-row">
+      <div class="step-circle">1</div>
+      <div class="step-info"><strong>Selecciona tu nombre (ADCAR)</strong><span>El formulario carga automaticamente tu informacion desde Monday. Sin campos repetidos.</span></div>
+    </div>
+    <div class="step-row">
+      <div class="step-circle">2</div>
+      <div class="step-info"><strong>Elige motivo y cronograma de fechas</strong><span>Los dias de ausencia se calculan solos contando solo dias habiles (lunes a viernes).</span></div>
+    </div>
+    <div class="step-row">
+      <div class="step-circle">3</div>
+      <div class="step-info"><strong>Ingresa backup y su correo electronico</strong><span>Indica quien te cubre y su correo. Queda registrado en Monday junto a la solicitud.</span></div>
+    </div>
+    <div class="step-row">
+      <div class="step-circle">4</div>
+      <div class="step-info"><strong>Adjunta soporte si es necesario</strong><span>Arrastra o selecciona cualquier archivo. Maximo 50 MB. Se sube directo al board.</span></div>
+    </div>
+    <div class="step-row">
+      <div class="step-circle">5</div>
+      <div class="step-info"><strong>Guardar &rarr; Aprobacion por Anlli Liliana</strong><span>La lider aprueba o rechaza desde el dashboard con acceso exclusivo por contrasena.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: DASHBOARD ACTUALIZACIONES -->
+<div class="slide bg-purple" data-index="5">
+  <div class="eyebrow">Dashboard 2</div>
+  <h2 class="slide-title">Actualizaciones Semanales</h2>
+  <p class="slide-sub">Tres modulos en un solo lugar</p>
+  <div class="cards cols3" style="max-width:840px;">
+    <div class="card">
+      <div class="card-icon">&#128221;</div>
+      <div class="card-title">Actualizaciones</div>
+      <div class="card-text">Registra el avance semanal. Selecciona tu nombre, llena el formulario y sincroniza con Monday al instante.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#9201;</div>
+      <div class="card-title">Horas Extras</div>
+      <div class="card-text">Registra horas extras por semana con fecha de solicitud. Historial completo por ADCAR en el board.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#127968;</div>
+      <div class="card-title">Modalidad</div>
+      <div class="card-text">Indica Presencial, Remoto o Hibrido. Se actualiza en tu misma fila del board de Monday.</div>
+    </div>
+  </div>
+  <div class="board-demo" style="margin-top:18px;">
+    <div class="board-header">Vista Monday &mdash; Board Actualizaciones (18432741374)</div>
+    <div class="board-row">
+      <div class="board-cell name">Andrea Ospina</div>
+      <div class="board-cell"><span class="pill" style="background:rgba(52,211,153,.25);color:#6ee7b7;">Actualizado</span></div>
+      <div class="board-cell" style="opacity:.55;font-size:10px;">12 - 18 ene</div>
+      <div class="board-cell"><span class="pill" style="background:rgba(253,186,116,.2);color:#fde68a;">2 hrs</span></div>
+      <div class="board-cell"><span class="pill" style="background:rgba(196,181,253,.2);color:#c4b5fd;">Hibrido</span></div>
+    </div>
+    <div class="board-row">
+      <div class="board-cell name">Karen Aldana</div>
+      <div class="board-cell"><span class="pill" style="background:rgba(52,211,153,.25);color:#6ee7b7;">Actualizado</span></div>
+      <div class="board-cell" style="opacity:.55;font-size:10px;">12 - 18 ene</div>
+      <div class="board-cell"><span class="pill" style="background:rgba(253,186,116,.2);color:#fde68a;">0 hrs</span></div>
+      <div class="board-cell"><span class="pill" style="background:rgba(96,165,250,.2);color:#93c5fd;">Remoto</span></div>
+    </div>
+    <div class="board-row">
+      <div class="board-cell name">Angela Cartagena</div>
+      <div class="board-cell"><span class="pill" style="background:rgba(253,186,116,.25);color:#fde68a;">Pendiente</span></div>
+      <div class="board-cell" style="opacity:.55;font-size:10px;">-</div>
+      <div class="board-cell"><span class="pill" style="background:rgba(255,255,255,.1);color:#e2e8f0;">-</span></div>
+      <div class="board-cell"><span class="pill" style="background:rgba(255,255,255,.1);color:#e2e8f0;">Presencial</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: COMO USAR -->
+<div class="slide bg-dark" data-index="6">
+  <div class="eyebrow">Guia de uso diario</div>
+  <h2 class="slide-title">Como lo uso<br/><span style="color:#60a5fa;">cada dia</span></h2>
+  <div class="hbar"></div>
+  <div class="cards cols2" style="max-width:800px;">
+    <div class="card" style="border-color:rgba(96,165,250,.35);">
+      <div class="card-icon">&#128994;</div>
+      <div class="card-title">Angela &mdash; Al encender el PC</div>
+      <div class="card-text">Doble clic en <strong style="color:#93c5fd;">"ABRIR DASHBOARDS IBM.bat"</strong> del Escritorio. Se abre el servidor y el navegador automaticamente. Dejar la ventana negra abierta.</div>
+    </div>
+    <div class="card" style="border-color:rgba(52,211,153,.35);">
+      <div class="card-icon">&#127760;</div>
+      <div class="card-title">ADCARs &mdash; Para entrar</div>
+      <div class="card-text">Abrir Chrome o Edge y escribir:<br/><code style="background:rgba(255,255,255,.1);padding:2px 7px;border-radius:4px;font-size:10px;display:inline-block;margin-top:5px;">http://10.230.141.243:3000/index_v2.html</code><br/><span style="font-size:10px;opacity:.65;">Red WiFi IBM requerida</span></div>
+    </div>
+    <div class="card" style="border-color:rgba(253,186,116,.35);">
+      <div class="card-icon">&#9888;</div>
+      <div class="card-title">Condicion importante</div>
+      <div class="card-text">Los ADCARs deben estar en la <strong style="color:#fde68a;">red WiFi IBM</strong> (no VPN Cemex). Mientras Angela tenga el servidor activo, todos pueden acceder y editar.</div>
+    </div>
+    <div class="card" style="border-color:rgba(220,38,38,.35);">
+      <div class="card-icon">&#128308;</div>
+      <div class="card-title">Angela &mdash; Al apagar el PC</div>
+      <div class="card-text">Clic en la consola &rarr; <strong style="color:#fca5a5;">Ctrl+C</strong> &rarr; escribir <strong style="color:#fca5a5;">Y</strong> &rarr; Enter &rarr; cerrar ventana &rarr; apagar PC.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: SEGURIDAD -->
+<div class="slide bg-orange" data-index="7">
+  <div class="eyebrow">Infraestructura y proteccion</div>
+  <h2 class="slide-title">Seguro y respaldado</h2>
+  <p class="slide-sub">La configuracion esta protegida en todo momento</p>
+  <div class="cards cols3" style="max-width:840px;">
+    <div class="card">
+      <div class="card-icon">&#128272;</div>
+      <div class="card-title">Token protegido</div>
+      <div class="card-text">El token de Monday esta en un archivo <strong>.env</strong> privado. Nunca viaja al navegador. Solo el servidor lo usa para comunicarse con Monday.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128737;</div>
+      <div class="card-title">Servidor seguro</div>
+      <div class="card-text">Usa Helmet, CORS estricto (solo IPs de red IBM) y Rate Limiting. El firewall de Windows ya tiene regla para Node.js habilitada.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128190;</div>
+      <div class="card-title">Backups con fecha</div>
+      <div class="card-text">Todos los dashboards estan respaldados en <strong>ibm-backend/backups/</strong>. Script restaurar.ps1 recupera todo en un clic si algo se dana.</div>
+    </div>
+  </div>
+  <div style="margin-top:18px;background:rgba(0,0,0,.2);border-radius:10px;padding:12px 18px;max-width:680px;font-size:11px;text-align:left;line-height:1.7;">
+    <strong>Restaurar backup:</strong>&nbsp;
+    <code style="font-size:10px;opacity:.85;">powershell -ExecutionPolicy Bypass -File "C:\...\backups\restaurar.ps1"</code>
+  </div>
+</div>
+
+<!-- SLIDE 9: CIERRE -->
+<div class="slide bg-dark" data-index="8">
+  <div class="ibm-logo" style="margin-bottom:14px;">
+    <div class="ibm-row"><div class="ibm-bar" style="width:44px"></div></div>
+    <div class="ibm-row"><div class="ibm-bar" style="width:14px"></div><div class="ibm-bar" style="width:14px"></div></div>
+    <div class="ibm-row"><div class="ibm-bar" style="width:44px"></div></div>
+  </div>
+  <div class="eyebrow">Resumen del proyecto</div>
+  <h2 class="hero-title" style="font-size:clamp(26px,3.8vw,50px);">Un sistema hecho<br/><span style="color:#60a5fa;">para el equipo</span></h2>
+  <div class="hbar"></div>
+  <div class="cards cols4" style="max-width:800px;margin:20px 0;">
+    <div class="card" style="text-align:center;"><div class="card-num" style="color:#60a5fa;">2</div><div class="card-text" style="text-align:center;">Dashboards conectados</div></div>
+    <div class="card" style="text-align:center;"><div class="card-num" style="color:#6ee7b7;">27</div><div class="card-text" style="text-align:center;">ADCARs registrados</div></div>
+    <div class="card" style="text-align:center;"><div class="card-num" style="color:#c4b5fd;">3</div><div class="card-text" style="text-align:center;">Boards Monday</div></div>
+    <div class="card" style="text-align:center;"><div class="card-num" style="color:#fde68a;">0</div><div class="card-text" style="text-align:center;">Correos manuales</div></div>
+  </div>
+  <p style="font-size:12px;opacity:.55;max-width:540px;line-height:1.6;">IBM Colombia &middot; Toda la informacion centralizada en Monday.com &middot; Acceso desde cualquier PC en la red IBM</p>
+  <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <a href="http://10.230.141.243:3000/index_v2.html" style="padding:9px 22px;background:#0f62fe;color:#fff;border-radius:9px;text-decoration:none;font-size:12px;font-weight:700;">Abrir Portal</a>
+    <a href="http://10.230.141.243:3000/dashboard_ausencias.html" style="padding:9px 22px;background:rgba(255,255,255,.1);color:#fff;border-radius:9px;text-decoration:none;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.18);">Ausencias</a>
+    <a href="http://10.230.141.243:3000/dashboard_actualizaciones.html" style="padding:9px 22px;background:rgba(255,255,255,.1);color:#fff;border-radius:9px;text-decoration:none;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.18);">Actualizaciones</a>
+  </div>
+</div>
+
+</div>
+
+<div id="nav">
+  <button id="prev">&#8592;</button>
+  <div id="dots"></div>
+  <button id="next">&#8594;</button>
+</div>
+
+<script>
+var slides=Array.from(document.querySelectorAll('.slide'));
+var total=slides.length;
+var cur=0;
+var dotsEl=document.getElementById('dots');
+for(var i=0;i<total;i++){
+  var d=document.createElement('div');
+  d.className='dot'+(i===0?' on':'');
+  d.onclick=(function(n){return function(){goTo(n);};})(i);
+  dotsEl.appendChild(d);
+}
+function goTo(n){
+  if(n<0||n>=total||n===cur)return;
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('exit');
+  setTimeout((function(p){return function(){slides[p].classList.remove('exit');};})(cur),520);
+  cur=n;
+  slides[cur].classList.add('active');
+  document.querySelectorAll('.dot').forEach(function(d,i){d.classList.toggle('on',i===cur);});
+  document.getElementById('counter').textContent=(cur+1)+' / '+total;
+}
+document.getElementById('next').onclick=function(){goTo(cur+1);};
+document.getElementById('prev').onclick=function(){goTo(cur-1);};
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();goTo(cur+1);}
+  if(e.key==='ArrowLeft'){e.preventDefault();goTo(cur-1);}
+});
+setTimeout(function(){document.getElementById('hint').style.opacity='0';},6000);
+var tx=0;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){
+  var dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>50){if(dx<0)goTo(cur+1);else goTo(cur-1);}
+},{passive:true});
+</script>
+</body>
+</html>

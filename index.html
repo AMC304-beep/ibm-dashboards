@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Monday.com - Dashboard de Gestión & Cronograma</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FullCalendar CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fc-toolbar-title { font-size: 1.15rem !important; font-weight: 600; }
+        .fc-event { cursor: pointer; border-radius: 6px; padding: 2px 4px; font-size: 0.82rem; border: none; }
+        .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Notificación Toast -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform transition-all duration-300 translate-y-20 opacity-0 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-xs">
+        <i data-lucide="info" id="toastIcon" class="w-4 h-4 text-blue-400"></i>
+        <span id="toastMsg">Mensaje</span>
+    </div>
+
+    <!-- Header Principal -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <!-- Logo Oficial IBM -->
+                    <div class="h-10 px-3 bg-slate-900 rounded-xl flex items-center justify-center shadow-md shadow-slate-900/10 border border-slate-800">
+                        <svg class="h-5 w-auto" viewBox="0 0 240 96" fill="white" xmlns="http://www.w3.org/2000/svg">
+                            <rect y="0" width="40" height="8" fill="#ffffff" />
+                            <rect y="16" width="40" height="8" fill="#ffffff" />
+                            <rect y="32" width="40" height="8" fill="#ffffff" />
+                            <rect y="48" width="40" height="8" fill="#ffffff" />
+                            <rect y="64" width="40" height="8" fill="#ffffff" />
+                            <rect y="80" width="40" height="8" fill="#ffffff" />
+                            <rect x="56" y="0" width="80" height="8" fill="#ffffff" />
+                            <rect x="56" y="16" width="24" height="8" fill="#ffffff" />
+                            <rect x="112" y="16" width="24" height="8" fill="#ffffff" />
+                            <rect x="56" y="32" width="24" height="8" fill="#ffffff" />
+                            <rect x="112" y="32" width="24" height="8" fill="#ffffff" />
+                            <rect x="56" y="44" width="80" height="8" fill="#ffffff" />
+                            <rect x="56" y="56" width="24" height="8" fill="#ffffff" />
+                            <rect x="112" y="56" width="24" height="8" fill="#ffffff" />
+                            <rect x="56" y="68" width="24" height="8" fill="#ffffff" />
+                            <rect x="112" y="68" width="24" height="8" fill="#ffffff" />
+                            <rect x="56" y="80" width="80" height="8" fill="#ffffff" />
+                            <rect x="152" y="0" width="24" height="8" fill="#ffffff" />
+                            <rect x="180" y="0" width="24" height="8" fill="#ffffff" />
+                            <rect x="208" y="0" width="24" height="8" fill="#ffffff" />
+                            <rect x="152" y="16" width="24" height="8" fill="#ffffff" />
+                            <rect x="180" y="16" width="24" height="8" fill="#ffffff" />
+                            <rect x="208" y="16" width="24" height="8" fill="#ffffff" />
+                            <rect x="152" y="32" width="24" height="8" fill="#ffffff" />
+                            <rect x="180" y="32" width="24" height="8" fill="#ffffff" />
+                            <rect x="208" y="32" width="24" height="8" fill="#ffffff" />
+                            <rect x="152" y="48" width="80" height="8" fill="#ffffff" />
+                            <rect x="152" y="64" width="24" height="8" fill="#ffffff" />
+                            <rect x="208" y="64" width="24" height="8" fill="#ffffff" />
+                            <rect x="152" y="80" width="24" height="8" fill="#ffffff" />
+                            <rect x="208" y="80" width="24" height="8" fill="#ffffff" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 id="boardNameHeader" class="text-base sm:text-lg font-bold text-slate-900 leading-tight">Tablero de Ausencias & Gestión</h1>
+                        <div class="flex items-center text-xs text-slate-500 space-x-2">
+                            <span>Board: <b class="text-slate-700">18432588237</b></span>
+                            <span>•</span>
+                            <span id="connectionBadge" class="inline-flex items-center text-amber-600 font-medium cursor-pointer" onclick="openTokenModal()">
+                                <span class="w-2 h-2 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>
+                                Token Pendiente
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Navegación de Vistas / Slides -->
+                <div class="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                    <button id="tabBtnSlide1" onclick="switchSlide(1)" class="flex items-center space-x-2 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 bg-white text-blue-600 shadow-sm">
+                        <i data-lucide="table" class="w-4 h-4"></i>
+                        <span>Slide 1: Solicitudes Enviadas</span>
+                    </button>
+                    <button id="tabBtnSlide2" onclick="switchSlide(2)" class="flex items-center space-x-2 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>Slide 2: Calendario Cronograma</span>
+                    </button>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="syncAllFromMonday(true)" title="Refrescar datos desde Monday" class="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition shadow-sm">
+                        <i data-lucide="refresh-cw" id="syncIcon" class="w-3.5 h-3.5"></i>
+                        <span>Sincronizar Monday</span>
+                    </button>
+                    <button onclick="openTokenModal()" title="Configurar Token de Monday" class="flex items-center space-x-1.5 px-3 py-2 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition border border-slate-300">
+                        <i data-lucide="key" class="w-3.5 h-3.5"></i>
+                        <span class="hidden sm:inline">Token Monday</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Alerta Informativa si no hay token configurado -->
+    <div id="tokenNoticeBanner" class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-xs text-amber-800 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto flex items-center space-x-2 w-full">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+            <span>Para conectar directamente con tu tablero <b>18432588237</b> en Monday y sincronizar <b>Adcar, Motivo Gerencia, Cronograma y Estado de Aprobación</b>, haz clic aquí:</span>
+            <button onclick="openTokenModal()" class="ml-auto font-bold bg-amber-600 text-white px-3 py-1 rounded-lg hover:bg-amber-700 flex-shrink-0">Conectar Token Monday</button>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+        <!-- ========================================== -->
+        <!-- SLIDE 1: Todas las Columnas y Gestión      -->
+        <!-- ========================================== -->
+        <section id="slide1" class="space-y-6 block">
+
+            <!-- KPIs Dinámicos basados en los Labels de Monday -->
+            <div id="dynamicKpisGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Se inyectan dinámicamente -->
+            </div>
+
+            <!-- Panel de Contenido: Formulario + Tabla Completa con Todas las Columnas -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Formulario Dinámico de Registro (4 Columnas) -->
+                <div class="lg:col-span-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sticky top-24">
+                        <div class="flex items-center space-x-2.5 mb-4 pb-3 border-b border-slate-100">
+                            <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-sm font-bold text-slate-900">Crear Registro en Monday</h2>
+                                <p class="text-xs text-slate-500">Se enviará a todas las columnas del tablero</p>
+                            </div>
+                        </div>
+
+                        <form id="dynamicCreateForm" onsubmit="handleCreateItem(event)" class="space-y-3.5 text-xs">
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1">Nombre del Elemento / Tarea *</label>
+                                <input type="text" id="createItemName" required placeholder="Ej: Angela Cartagena - Vacaciones" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600">
+                            </div>
+
+                            <!-- Campos autogenerados según las columnas del tablero -->
+                            <div id="dynamicFormFields" class="space-y-3">
+                                <!-- Se inyectan los inputs dinámicos para cada columna de Monday -->
+                            </div>
+
+                            <button type="submit" id="btnSubmitCreate" class="w-full flex items-center justify-center space-x-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all duration-200 mt-4">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                <span>Guardar en Monday</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tabla Dinámica con TODAS las Columnas de Monday (8 Columnas) -->
+                <div class="lg:col-span-8 space-y-5">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-sm font-bold text-slate-900">Registros del Tablero</h2>
+                                <p class="text-xs text-slate-500">Visualiza y edita todas las columnas y labels de Monday</p>
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                <input type="text" id="tableSearchInput" oninput="filterTableData()" placeholder="Buscar en todas las columnas..." class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:border-blue-500 w-48 sm:w-60">
+                            </div>
+                        </div>
+
+                        <!-- Tabla con scroll horizontal -->
+                        <div class="overflow-x-auto rounded-xl border border-slate-100 custom-scroll max-h-[500px]">
+                            <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                                <thead id="dynamicTableHead" class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200 sticky top-0 z-10">
+                                    <!-- Columnas inyectadas dinámicamente -->
+                                </thead>
+                                <tbody id="dynamicTableBody" class="divide-y divide-slate-100">
+                                    <!-- Filas inyectadas dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos de Labels de Monday -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                            <h3 class="text-xs font-bold text-slate-800 mb-2 flex items-center space-x-1.5">
+                                <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-blue-600"></i>
+                                <span>Distribución por Estados / Labels</span>
+                            </h3>
+                            <div class="h-44 relative flex items-center justify-center">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                            <h3 class="text-xs font-bold text-slate-800 mb-2 flex items-center space-x-1.5">
+                                <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-indigo-600"></i>
+                                <span>Resumen de Registros por Grupo</span>
+                            </h3>
+                            <div class="h-44 relative flex items-center justify-center">
+                                <canvas id="groupsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SLIDE 2: Cronograma & Calendario           -->
+        <!-- ========================================== -->
+        <section id="slide2" class="space-y-6 hidden">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Cronograma del Tablero</h2>
+                        <p class="text-xs text-slate-500">Visualización de las fechas, líneas de tiempo y asignaciones de cada persona</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="calendarFilterPerson" onchange="filterCalendarEvents()" class="bg-slate-50 border border-slate-200 text-xs px-3 py-1.5 rounded-lg outline-none font-medium text-slate-700">
+                            <option value="ALL">Todos los Registros / Personas</option>
+                        </select>
+                        <button onclick="calendar.today()" class="px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">Hoy</button>
+                    </div>
+                </div>
+
+                <!-- Contenedor del Calendario -->
+                <div class="mt-4">
+                    <div id="calendar" class="min-h-[600px]"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal para Configuración del API Token de Monday -->
+    <div id="tokenModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div class="flex items-center space-x-2.5">
+                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                        <i data-lucide="key" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900">Configurar Conexión Monday.com</h3>
+                </div>
+                <button onclick="closeTokenModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3.5 py-4 text-xs text-slate-600">
+                <p>Ingresa tu <b>API Token Personal de Monday</b> para habilitar la descarga en vivo de las columnas <b>Adcar, Motivo Gerencia, Cronograma y Estado de Aprobación</b>, y activar la edición inmediata.</p>
+                
+                <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1.5 text-[11.5px] text-blue-900">
+                    <p class="font-semibold flex items-center">
+                        <i data-lucide="help-circle" class="w-3.5 h-3.5 mr-1 text-blue-600"></i> ¿Cómo obtener tu Token en Monday?
+                    </p>
+                    <ol class="list-decimal list-inside space-y-1 pl-1 text-blue-800">
+                        <li>En Monday.com haz clic en tu <b>Avatar (Foto de perfil)</b> abajo a la izquierda.</li>
+                        <li>Selecciona <b>Desarrolladores (Developers)</b> o <b>Administration</b>.</li>
+                        <li>Entra a la pestaña <b>Developer</b> &gt; <b>My Access Tokens</b>.</li>
+                        <li>Haz clic en <b>Show</b>, copia el token y pégalo en el campo inferior.</li>
+                    </ol>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Board ID:</label>
+                    <input type="text" id="cfgBoardId" value="18432588237" class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-700 text-xs" readonly>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Personal API Token (Monday):</label>
+                    <input type="password" id="inputMondayToken" placeholder="Pega tu token aquí..." class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600">
+                    <p class="text-[11px] text-slate-400 mt-1">Se almacena de forma privada en tu navegador (localStorage) para no pedírtelo nuevamente.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button onclick="closeTokenModal()" class="px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                <button onclick="saveMondayToken()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">Guardar y Sincronizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Dinámico de Edición de Todas las Columnas -->
+    <div id="editDynamicModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div class="flex items-center space-x-2.5">
+                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Editar Columnas en Monday</h3>
+                        <p class="text-[11px] text-slate-400">Actualiza cualquier valor y label en tiempo real</p>
+                    </div>
+                </div>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="dynamicEditForm" onsubmit="saveEditedItem(event)" class="space-y-3.5 py-4 text-xs overflow-y-auto flex-1 custom-scroll pr-1">
+                <input type="hidden" id="editItemId">
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Nombre del Elemento *</label>
+                    <input type="text" id="editItemName" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600">
+                </div>
+
+                <!-- Campos inyectados para cada columna del item -->
+                <div id="dynamicEditFields" class="space-y-3">
+                    <!-- Dinámico -->
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100 mt-4">
+                    <button type="button" onclick="deleteCurrentItem()" class="flex items-center space-x-1 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Eliminar</span>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" onclick="closeEditModal()" class="px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm flex items-center space-x-1.5">
+                            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                            <span>Guardar en Monday</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de Lógica, Extracción Completa de Monday y Renderizado Dinámico -->
+    <script>
+        lucide.createIcons();
+
+        const BOARD_ID = "18432588237";
+        let boardMetadata = { name: "Tablero", columns: [], groups: [] };
+        let boardItems = [];
+        let calendar;
+        let statusChartInstance = null;
+        let groupsChartInstance = null;
+
+        const DEFAULT_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
+        }
+
+        function switchSlide(slideNum) {
+            const s1 = document.getElementById('slide1');
+            const s2 = document.getElementById('slide2');
+            const b1 = document.getElementById('tabBtnSlide1');
+            const b2 = document.getElementById('tabBtnSlide2');
+
+            if (slideNum === 1) {
+                s1.classList.remove('hidden');
+                s2.classList.add('hidden');
+                b1.className = "flex items-center space-x-2 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 bg-white text-blue-600 shadow-sm";
+                b2.className = "flex items-center space-x-2 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200";
+            } else {
+                s1.classList.add('hidden');
+                s2.classList.remove('hidden');
+                b2.className = "flex items-center space-x-2 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 bg-white text-blue-600 shadow-sm";
+                b1.className = "flex items-center space-x-2 px-3.5 py-2 rounded-lg font-medium text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200";
+                setTimeout(() => { if (calendar) calendar.render(); }, 100);
+            }
+        }
+
+        // ==========================================
+        // Modal de Configuración de Token
+        // ==========================================
+        function openTokenModal() {
+            /* Token is managed server-side in backend/.env — not stored in the browser */
+            const el = document.getElementById('inputMondayToken');
+            if (el) el.value = '';
+            document.getElementById('tokenModal').classList.remove('hidden');
+        }
+
+        function closeTokenModal() {
+            document.getElementById('tokenModal').classList.add('hidden');
+        }
+
+        /* Token managed server-side — UI informs user */
+        const PROXY_BASE_V1 = 'http://127.0.0.1:3000';
+
+        function saveMondayToken() {
+            closeTokenModal();
+            showToast("Token gestionado en backend/.env — no se almacena en el navegador.");
+            updateConnectionStatus();
+        }
+
+        function updateConnectionStatus() {
+            const badge = document.getElementById('connectionBadge');
+            const banner = document.getElementById('tokenNoticeBanner');
+            fetch(`${PROXY_BASE_V1}/api/health`)
+              .then(r => r.ok ? r.json() : Promise.reject())
+              .then(() => {
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>Backend conectado`;
+                badge.className = "inline-flex items-center text-emerald-600 font-medium cursor-pointer";
+                if (banner) banner.classList.add('hidden');
+              })
+              .catch(() => {
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>Backend desconectado`;
+                badge.className = "inline-flex items-center text-amber-600 font-medium cursor-pointer";
+                if (banner) banner.classList.remove('hidden');
+              });
+        }
+
+        // ==========================================
+        // Llamada a la API de Monday (via proxy backend)
+        // ==========================================
+        async function callMondayAPI(query, variables = {}) {
+            let res;
+            try {
+                res = await fetch(`${PROXY_BASE_V1}/api/monday/query`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query, variables })
+                });
+            } catch (networkErr) {
+                console.error("Error al conectar con el backend proxy:", networkErr);
+                throw new Error("NETWORK_OR_CORS: " + (networkErr.message || "No se pudo alcanzar el backend proxy"));
+            }
+
+            if (!res.ok) {
+                let errorDetails = `HTTP ${res.status}`;
+                try {
+                    const errorJson = await res.json();
+                    if (errorJson.error_message) errorDetails += `: ${errorJson.error_message}`;
+                    else if (errorJson.errors) errorDetails += `: ${JSON.stringify(errorJson.errors)}`;
+                } catch (e) {
+                    const txt = await res.text();
+                    if (txt) errorDetails += `: ${txt}`;
+                }
+                throw new Error(errorDetails);
+            }
+            return await res.json();
+        }
+
+        // ==========================================
+        // Obtener TODAS las Columnas, Labels e Items
+        // ==========================================
+        async function syncAllFromMonday(showFeedback = false) {
+            const icon = document.getElementById('syncIcon');
+            if (icon) icon.classList.add('animate-spin');
+
+            const query = `
+                query GetMondayBoard($boardId: [ID!]) {
+                    boards(ids: $boardId) {
+                        name
+                        groups {
+                            id
+                            title
+                            color
+                        }
+                        columns {
+                            id
+                            title
+                            type
+                            settings_str
+                        }
+                        items_page(limit: 250) {
+                            items {
+                                id
+                                name
+                                group {
+                                    id
+                                    title
+                                }
+                                column_values {
+                                    id
+                                    type
+                                    text
+                                    value
+                                }
+                            }
+                        }
+                    }
+                }
+            `;
+
+            try {
+                const data = await callMondayAPI(query, { boardId: [BOARD_ID] });
+                if (data.errors) throw new Error(data.errors[0].message);
+
+                const board = data.data?.boards?.[0];
+                if (board) {
+                    boardMetadata.name = board.name;
+                    // Excluir 'name' y columnas no deseadas: 'soporte ausencia', 'aprobacion', 'estado de aprobacion', 'dias ausencias'
+                    const excludedTitles = [
+                        'soporte ausencia', 'soporte ausencias', 'soporte de ausencia', 'soporte',
+                        'aprobacion', 'aprobación',
+                        'estado de aprobacion', 'estado de aprobación', 'estado aprobacion', 'estado aprobación', 'aprobacion estado',
+                        'dias ausencias', 'días ausencias', 'dias ausencia', 'días ausencia', 'dias de ausencia', 'días de ausencia', 'dias'
+                    ];
+                    
+                    boardMetadata.columns = (board.columns || []).filter(c => {
+                        if (c.type === 'name' || c.id === 'name') return false;
+                        const titleLower = (c.title || '').toLowerCase().trim();
+                        const idLower = (c.id || '').toLowerCase().trim();
+                        
+                        const isExcluded = excludedTitles.some(ex => titleLower === ex || titleLower.includes(ex) || idLower.includes(ex.replace(/\s+/g, '_')));
+                        return !isExcluded;
+                    });
+                    boardMetadata.groups = board.groups || [];
+                    
+                    // Parsear items y filtrar líneas no diligenciadas (mostrar solo solicitudes enviadas)
+                    boardItems = (board.items_page?.items || []).map(item => {
+                        const parsedValues = (item.column_values || []).map(cv => {
+                            let parsedObj = {};
+                            try {
+                                if (cv.value) parsedObj = JSON.parse(cv.value);
+                            } catch (e) {}
+
+                            return {
+                                id: cv.id,
+                                type: cv.type,
+                                text: cv.text || parsedObj.label || '',
+                                label: cv.text || parsedObj.label || '',
+                                date: parsedObj.date || null,
+                                from: parsedObj.from || null,
+                                to: parsedObj.to || null,
+                                raw: parsedObj
+                            };
+                        });
+
+                        return {
+                            id: item.id,
+                            name: item.name,
+                            group: item.group || { id: 'default', title: 'General' },
+                            column_values: parsedValues
+                        };
+                    }).filter(item => {
+                        // Filtrar líneas vacías o no diligenciadas
+                        const hasValidName = item.name && item.name.trim() !== '' && !item.name.toLowerCase().startsWith('nuevo elemento') && !item.name.toLowerCase().startsWith('new item');
+                        const hasDiligence = item.column_values.some(cv => cv.text && cv.text.trim() !== '' && cv.text !== '-');
+                        return hasValidName && hasDiligence;
+                    });
+
+                    document.getElementById('boardNameHeader').innerText = board.name || "Tablero de Monday";
+                    localStorage.setItem('cached_monday_board', JSON.stringify({ boardMetadata, boardItems }));
+
+                    renderDynamicUI();
+                    if (showFeedback) showToast(`Sincronizados ${boardItems.length} registros y ${boardMetadata.columns.length} columnas.`);
+                } else {
+                    throw new Error("No se encontró el tablero con ID " + BOARD_ID);
+                }
+            } catch (err) {
+                console.error("Error al sincronizar con Monday:", err);
+                if (err.message === "NO_TOKEN") {
+                    if (showFeedback) openTokenModal();
+                } else {
+                    if (showFeedback) showToast("Error al conectar con Monday: " + err.message);
+                }
+                loadFallbackOrCached();
+            } finally {
+                if (icon) icon.classList.remove('animate-spin');
+            }
+        }
+
+        function loadFallbackOrCached() {
+            const cached = localStorage.getItem('cached_monday_board');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                boardMetadata = parsed.boardMetadata;
+                boardItems = parsed.boardItems;
+            } else {
+                boardMetadata = {
+                    name: "Control de Ausencias & Cronograma",
+                    columns: [
+                        { id: "adcar", title: "Adcar", type: "text" },
+                        { id: "motivo_gerencia", title: "Motivo Gerencia", type: "status", settings_str: JSON.stringify({ labels: { 1: "Vacaciones", 2: "Permiso Personal", 3: "Incapacidad Médica", 4: "Capacitación / Formación" } }) },
+                        { id: "cronograma", title: "Cronograma", type: "timeline" }
+                    ],
+                    groups: [{ id: "group_1", title: "Solicitudes 2025" }]
+                };
+                boardItems = [
+                    {
+                        id: "101",
+                        name: "Angela Cartagena - Vacaciones",
+                        group: { id: "group_1", title: "Solicitudes 2025" },
+                        column_values: [
+                            { id: "adcar", text: "AD-001 - Angela Cartagena", type: "text" },
+                            { id: "motivo_gerencia", text: "Vacaciones", label: "Vacaciones", type: "status" },
+                            { id: "cronograma", text: "2025-04-14 - 2025-04-20", from: "2025-04-14", to: "2025-04-20", type: "timeline" }
+                        ]
+                    },
+                    {
+                        id: "102",
+                        name: "Carlos Mario Restrepo - Permiso",
+                        group: { id: "group_1", title: "Solicitudes 2025" },
+                        column_values: [
+                            { id: "adcar", text: "AD-002 - Carlos Restrepo", type: "text" },
+                            { id: "motivo_gerencia", text: "Permiso Personal", label: "Permiso Personal", type: "status" },
+                            { id: "cronograma", text: "2025-04-02 - 2025-04-03", from: "2025-04-02", to: "2025-04-03", type: "timeline" }
+                        ]
+                    },
+                    {
+                        id: "103",
+                        name: "Mariana Gómez - Incapacidad",
+                        group: { id: "group_1", title: "Solicitudes 2025" },
+                        column_values: [
+                            { id: "adcar", text: "AD-003 - Mariana Gómez", type: "text" },
+                            { id: "motivo_gerencia", text: "Incapacidad Médica", label: "Incapacidad Médica", type: "status" },
+                            { id: "cronograma", text: "2025-03-25 - 2025-03-28", from: "2025-03-25", to: "2025-03-28", type: "timeline" }
+                        ]
+                    },
+                    {
+                        id: "104",
+                        name: "Felipe Morales - Capacitación",
+                        group: { id: "group_1", title: "Solicitudes 2025" },
+                        column_values: [
+                            { id: "adcar", text: "AD-004 - Felipe Morales", type: "text" },
+                            { id: "motivo_gerencia", text: "Capacitación / Formación", label: "Capacitación / Formación", type: "status" },
+                            { id: "cronograma", text: "2025-04-10 - 2025-04-11", from: "2025-04-10", to: "2025-04-11", type: "timeline" }
+                        ]
+                    }
+                ];
+            }
+            renderDynamicUI();
+        }
+
+        function renderDynamicUI() {
+            renderKpis();
+            renderTableHead();
+            renderTableBody();
+            renderCreateFormFields();
+            updateCharts();
+            populateCalendar();
+            lucide.createIcons();
+        }
+
+        function renderKpis() {
+            const grid = document.getElementById('dynamicKpisGrid');
+            grid.innerHTML = '';
+
+            let statusCol = boardMetadata.columns.find(c => c.type === 'status' || c.id.toLowerCase().includes('status') || c.id.includes('motivo'));
+            let counts = { 'Solicitudes Enviadas': boardItems.length };
+
+            boardItems.forEach(item => {
+                let statusVal = "General";
+                if (statusCol) {
+                    const valObj = item.column_values.find(v => v.id === statusCol.id);
+                    if (valObj && valObj.text) statusVal = valObj.text;
+                }
+                counts[statusVal] = (counts[statusVal] || 0) + 1;
+            });
+
+            grid.innerHTML += `
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Solicitudes Enviadas</p>
+                        <h3 class="text-xl font-bold text-slate-900 mt-0.5">${counts['Solicitudes Enviadas']}</h3>
+                    </div>
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </div>
+                </div>
+            `;
+
+            const labels = Object.keys(counts).filter(k => k !== 'Solicitudes Enviadas');
+            labels.slice(0, 3).forEach((label, idx) => {
+                const color = DEFAULT_COLORS[idx % DEFAULT_COLORS.length];
+                grid.innerHTML += `
+                    <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider truncate max-w-[120px]" style="color: ${color}">${label}</p>
+                            <h3 class="text-xl font-bold mt-0.5" style="color: ${color}">${counts[label]}</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: ${color}15; color: ${color}">
+                            <i data-lucide="tag" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderTableHead() {
+            const thead = document.getElementById('dynamicTableHead');
+            thead.innerHTML = `
+                <tr>
+                    <th class="px-4 py-3">Nombre</th>
+                    <th class="px-4 py-3">Grupo</th>
+                    ${boardMetadata.columns.map(col => `<th class="px-4 py-3">${col.title}</th>`).join('')}
+                    <th class="px-4 py-3 text-right">Acción</th>
+                </tr>
+            `;
+        }
+
+        function renderTableBody(filterText = '') {
+            const tbody = document.getElementById('dynamicTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = boardItems.filter(item => {
+                if (!filterText) return true;
+                const matchName = item.name.toLowerCase().includes(filterText.toLowerCase());
+                const matchCols = item.column_values.some(c => (c.text || '').toLowerCase().includes(filterText.toLowerCase()));
+                return matchName || matchCols;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${boardMetadata.columns.length + 3}" class="px-4 py-8 text-center text-slate-400">No se encontraron elementos en el tablero.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition-colors";
+
+                let colsHtml = boardMetadata.columns.map(col => {
+                    const colVal = item.column_values.find(v => v.id === col.id) || {};
+                    const text = colVal.text || '-';
+
+                    if (col.type === 'status') {
+                        let color = '#64748b';
+                        if (text.toLowerCase().includes('aprob') || text.toLowerCase().includes('done')) color = '#10b981';
+                        else if (text.toLowerCase().includes('rechaz') || text.toLowerCase().includes('stuck')) color = '#ef4444';
+                        else if (text.toLowerCase().includes('pend')) color = '#f59e0b';
+                        else color = '#3b82f6';
+
+                        return `
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border" style="background-color: ${color}15; color: ${color}; border-color: ${color}30">
+                                    ${text}
+                                </span>
+                            </td>
+                        `;
+                    }
+
+                    if (col.type === 'timeline' || col.type === 'date') {
+                        return `<td class="px-4 py-3 font-mono text-[11px] text-slate-600">${text}</td>`;
+                    }
+
+                    return `<td class="px-4 py-3 text-slate-700 max-w-xs truncate">${text}</td>`;
+                }).join('');
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-semibold text-slate-900">${item.name}</td>
+                    <td class="px-4 py-3 text-slate-500 font-medium">${item.group?.title || 'Principal'}</td>
+                    ${colsHtml}
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="openEditModal('${item.id}')" class="px-2.5 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-semibold transition inline-flex items-center space-x-1">
+                            <i data-lucide="edit-2" class="w-3 h-3"></i>
+                            <span>Editar</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function filterTableData() {
+            const query = document.getElementById('tableSearchInput').value;
+            renderTableBody(query);
+        }
+
+        function renderCreateFormFields() {
+            const container = document.getElementById('dynamicFormFields');
+            container.innerHTML = '';
+
+            // Filtrar columnas de aprobación para que solo la gerencia apruebe en Monday
+            const excludedFormTitles = ['aprobacion', 'aprobación', 'estado de aprobacion', 'estado de aprobación', 'estado aprobacion', 'estado aprobación'];
+
+            boardMetadata.columns.forEach(col => {
+                const titleLower = (col.title || '').toLowerCase().trim();
+                const idLower = (col.id || '').toLowerCase().trim();
+                if (excludedFormTitles.some(ex => titleLower.includes(ex) || idLower.includes(ex.replace(/\s+/g, '_')))) {
+                    return; // No mostrar opción de estado/aprobación al crear registro
+                }
+
+                let inputHtml = '';
+                if (col.type === 'status') {
+                    let labelsFromSettings = [];
+                    try {
+                        if (col.settings_str) {
+                            const parsedSettings = JSON.parse(col.settings_str);
+                            if (parsedSettings.labels) {
+                                labelsFromSettings = Object.values(parsedSettings.labels).filter(Boolean);
+                            }
+                        }
+                    } catch (e) {}
+
+                    const knownLabels = [...new Set([
+                        ...labelsFromSettings,
+                        ...boardItems.map(it => {
+                            const v = it.column_values.find(cv => cv.id === col.id);
+                            return v ? v.text : null;
+                        }).filter(Boolean)
+                    ])];
+
+                    const defaultFallback = ['Vacaciones', 'Permiso Personal', 'Incapacidad Médica', 'Capacitación / Formación'];
+                    const finalLabels = knownLabels.length > 0 ? knownLabels : defaultFallback;
+
+                    const options = finalLabels.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+                    inputHtml = `
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">${col.title}</label>
+                            <select name="${col.id}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600">
+                                ${options}
+                            </select>
+                        </div>
+                    `;
+                } else if (col.type === 'timeline') {
+                    inputHtml = `
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1">${col.title} (Inicio)</label>
+                                <input type="date" name="${col.id}_from" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1">${col.title} (Fin)</label>
+                                <input type="date" name="${col.id}_to" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs">
+                            </div>
+                        </div>
+                    `;
+                } else if (col.type === 'date') {
+                    inputHtml = `
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">${col.title}</label>
+                            <input type="date" name="${col.id}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                        </div>
+                    `;
+                } else {
+                    inputHtml = `
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">${col.title}</label>
+                            <input type="text" name="${col.id}" placeholder="Ingresar ${col.title.toLowerCase()}..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                        </div>
+                    `;
+                }
+                container.innerHTML += inputHtml;
+            });
+        }
+
+        function openEditModal(itemId) {
+            const item = boardItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            document.getElementById('editItemId').value = item.id;
+            document.getElementById('editItemName').value = item.name;
+
+            const fieldsContainer = document.getElementById('dynamicEditFields');
+            fieldsContainer.innerHTML = '';
+
+            const excludedFormTitles = ['aprobacion', 'aprobación', 'estado de aprobacion', 'estado de aprobación', 'estado aprobacion', 'estado aprobación'];
+
+            boardMetadata.columns.forEach(col => {
+                const titleLower = (col.title || '').toLowerCase().trim();
+                const idLower = (col.id || '').toLowerCase().trim();
+                if (excludedFormTitles.some(ex => titleLower.includes(ex) || idLower.includes(ex.replace(/\s+/g, '_')))) {
+                    return; // No editar estado de aprobación desde el formulario del dashboard
+                }
+
+                const valObj = item.column_values.find(v => v.id === col.id) || {};
+                const currentText = valObj.text || '';
+
+                let inputHtml = '';
+                if (col.type === 'status') {
+                    let labelsFromSettings = [];
+                    try {
+                        if (col.settings_str) {
+                            const parsedSettings = JSON.parse(col.settings_str);
+                            if (parsedSettings.labels) {
+                                labelsFromSettings = Object.values(parsedSettings.labels).filter(Boolean);
+                            }
+                        }
+                    } catch (e) {}
+
+                    const knownLabels = [...new Set([
+                        ...labelsFromSettings,
+                        ...boardItems.map(it => {
+                            const v = it.column_values.find(cv => cv.id === col.id);
+                            return v ? v.text : null;
+                        }).filter(Boolean)
+                    ])];
+
+                    const defaultFallback = ['Vacaciones', 'Permiso Personal', 'Incapacidad Médica', 'Capacitación / Formación'];
+                    const finalLabels = knownLabels.length > 0 ? knownLabels : defaultFallback;
+
+                    const options = finalLabels.map(opt => `<option value="${opt}" ${opt === currentText ? 'selected' : ''}>${opt}</option>`).join('');
+
+                    inputHtml = `
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">${col.title}</label>
+                            <select name="${col.id}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800">
+                                ${options}
+                            </select>
+                        </div>
+                    `;
+                } else if (col.type === 'timeline') {
+                    let from = valObj.from || '';
+                    let to = valObj.to || '';
+                    if (!from && currentText.includes('-')) {
+                        const parts = currentText.split('-').map(s=>s.trim());
+                        from = parts[0];
+                        to = parts[1] || parts[0];
+                    }
+                    inputHtml = `
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1">${col.title} (Inicio)</label>
+                                <input type="date" name="${col.id}_from" value="${from}" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1">${col.title} (Fin)</label>
+                                <input type="date" name="${col.id}_to" value="${to}" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs">
+                            </div>
+                        </div>
+                    `;
+                } else if (col.type === 'date') {
+                    inputHtml = `
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">${col.title}</label>
+                            <input type="date" name="${col.id}" value="${valObj.date || currentText}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                        </div>
+                    `;
+                } else {
+                    inputHtml = `
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">${col.title}</label>
+                            <input type="text" name="${col.id}" value="${currentText}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                        </div>
+                    `;
+                }
+                fieldsContainer.innerHTML += inputHtml;
+            });
+
+            document.getElementById('editDynamicModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editDynamicModal').classList.add('hidden');
+        }
+
+        async function handleCreateItem(e) {
+            e.preventDefault();
+            const form = document.getElementById('dynamicCreateForm');
+            const itemName = document.getElementById('createItemName').value.trim();
+
+            const colValuesPayload = {};
+            const localColumnValues = [];
+
+            boardMetadata.columns.forEach(col => {
+                if (col.type === 'status') {
+                    const val = form[col.id]?.value;
+                    if (val) {
+                        colValuesPayload[col.id] = { label: val };
+                        localColumnValues.push({ id: col.id, text: val, label: val, type: 'status' });
+                    }
+                } else if (col.type === 'timeline') {
+                    const from = form[`${col.id}_from`]?.value;
+                    const to = form[`${col.id}_to`]?.value;
+                    if (from) {
+                        colValuesPayload[col.id] = { from: from, to: to || from };
+                        localColumnValues.push({ id: col.id, text: `${from} - ${to || from}`, from, to, type: 'timeline' });
+                    }
+                } else if (col.type === 'date') {
+                    const val = form[col.id]?.value;
+                    if (val) {
+                        colValuesPayload[col.id] = { date: val };
+                        localColumnValues.push({ id: col.id, text: val, date: val, type: 'date' });
+                    }
+                } else {
+                    const val = form[col.id]?.value;
+                    if (val) {
+                        colValuesPayload[col.id] = val;
+                        localColumnValues.push({ id: col.id, text: val, type: 'text' });
+                    }
+                }
+            });
+
+            const newItem = {
+                id: "temp_" + Date.now().toString(),
+                name: itemName,
+                group: { id: "group_1", title: "Principal" },
+                column_values: localColumnValues
+            };
+
+            boardItems.unshift(newItem);
+            renderDynamicUI();
+            form.reset();
+            showToast("Creando elemento en Monday...");
+
+            const query = `
+                mutation CreateItem($boardId: ID!, $itemName: String!, $colVals: JSON!) {
+                    create_item (
+                        board_id: $boardId,
+                        item_name: $itemName,
+                        column_values: $colVals
+                    ) {
+                        id
+                    }
+                }
+            `;
+
+            try {
+                const data = await callMondayAPI(query, {
+                    boardId: BOARD_ID,
+                    itemName: itemName,
+                    colVals: JSON.stringify(colValuesPayload)
+                });
+                if (data.data?.create_item?.id) {
+                    newItem.id = data.data.create_item.id;
+                    showToast("¡Elemento creado exitosamente en Monday!");
+                } else if (data.errors) {
+                    showToast("Aviso al crear en Monday: " + data.errors[0].message);
+                }
+            } catch (err) {
+                console.warn("Elemento guardado localmente:", err);
+            }
+        }
+
+        async function saveEditedItem(e) {
+            e.preventDefault();
+            const form = document.getElementById('dynamicEditForm');
+            const itemId = document.getElementById('editItemId').value;
+            const itemName = document.getElementById('editItemName').value.trim();
+            const item = boardItems.find(i => i.id === itemId);
+
+            if (!item) return;
+
+            item.name = itemName;
+            const colValuesPayload = {};
+
+            boardMetadata.columns.forEach(col => {
+                let existingVal = item.column_values.find(v => v.id === col.id);
+                if (!existingVal) {
+                    existingVal = { id: col.id, type: col.type };
+                    item.column_values.push(existingVal);
+                }
+
+                if (col.type === 'status') {
+                    const val = form[col.id]?.value;
+                    existingVal.text = val;
+                    existingVal.label = val;
+                    colValuesPayload[col.id] = { label: val };
+                } else if (col.type === 'timeline') {
+                    const from = form[`${col.id}_from`]?.value;
+                    const to = form[`${col.id}_to`]?.value;
+                    existingVal.from = from;
+                    existingVal.to = to || from;
+                    existingVal.text = `${from} - ${to || from}`;
+                    colValuesPayload[col.id] = { from, to: to || from };
+                } else if (col.type === 'date') {
+                    const val = form[col.id]?.value;
+                    existingVal.date = val;
+                    existingVal.text = val;
+                    colValuesPayload[col.id] = { date: val };
+                } else {
+                    const val = form[col.id]?.value;
+                    existingVal.text = val;
+                    colValuesPayload[col.id] = val;
+                }
+            });
+
+            closeEditModal();
+            renderDynamicUI();
+            showToast("Actualizando de inmediato en Monday...");
+
+            const query = `
+                mutation UpdateMondayItem($itemId: ID!, $boardId: ID!, $colVals: JSON!, $nameVal: String!) {
+                    change_multiple_column_values (
+                        item_id: $itemId,
+                        board_id: $boardId,
+                        column_values: $colVals
+                    ) {
+                        id
+                    }
+                    change_simple_column_value (
+                        item_id: $itemId,
+                        board_id: $boardId,
+                        column_id: "name",
+                        value: $nameVal
+                    ) {
+                        id
+                    }
+                }
+            `;
+
+            try {
+                const res = await callMondayAPI(query, {
+                    itemId: itemId,
+                    boardId: BOARD_ID,
+                    colVals: JSON.stringify(colValuesPayload),
+                    nameVal: itemName
+                });
+                if (res.errors) {
+                    console.error("Error devuelto por Monday:", res.errors);
+                    showToast("Aviso: " + res.errors[0].message);
+                } else {
+                    showToast("¡Actualizado de inmediato en Monday!");
+                }
+            } catch (err) {
+                console.warn("Actualizado localmente:", err);
+                showToast("Guardado localmente. Error: " + err.message);
+            }
+        }
+
+        async function deleteCurrentItem() {
+            const itemId = document.getElementById('editItemId').value;
+            if (confirm("¿Estás seguro de que deseas eliminar este elemento de Monday?")) {
+                boardItems = boardItems.filter(i => i.id !== itemId);
+                closeEditModal();
+                renderDynamicUI();
+                showToast("Eliminando de Monday...");
+
+                const query = `
+                    mutation DeleteMondayItem($itemId: ID!) {
+                        delete_item (item_id: $itemId) {
+                            id
+                        }
+                    }
+                `;
+                try {
+                    await callMondayAPI(query, { itemId: itemId });
+                    showToast("Elemento eliminado de Monday.");
+                } catch (e) {
+                    console.warn("Eliminado localmente:", e);
+                }
+            }
+        }
+
+        function updateCharts() {
+            const statusCol = boardMetadata.columns.find(c => c.type === 'status' || c.id.includes('status'));
+            const statusCounts = {};
+            boardItems.forEach(item => {
+                let lbl = "Sin Estado";
+                if (statusCol) {
+                    const v = item.column_values.find(cv => cv.id === statusCol.id);
+                    if (v && v.text) lbl = v.text;
+                }
+                statusCounts[lbl] = (statusCounts[lbl] || 0) + 1;
+            });
+
+            const ctx1 = document.getElementById('statusChart').getContext('2d');
+            if (statusChartInstance) statusChartInstance.destroy();
+            statusChartInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: DEFAULT_COLORS,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                    cutout: '70%'
+                }
+            });
+
+            const groupCounts = {};
+            boardItems.forEach(item => {
+                const grp = item.group?.title || 'Principal';
+                groupCounts[grp] = (groupCounts[grp] || 0) + 1;
+            });
+
+            const ctx2 = document.getElementById('groupsChart').getContext('2d');
+            if (groupsChartInstance) groupsChartInstance.destroy();
+            groupsChartInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(groupCounts),
+                    datasets: [{
+                        data: Object.values(groupCounts),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0, font: { size: 9 } } },
+                        x: { ticks: { font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+
+        function populateCalendar() {
+            if (!calendar) return;
+            calendar.removeAllEvents();
+
+            const filterPerson = document.getElementById('calendarFilterPerson')?.value || 'ALL';
+            const filterSelect = document.getElementById('calendarFilterPerson');
+            
+            const allPeople = [...new Set(boardItems.map(i => {
+                const personCol = i.column_values.find(c => c.type === 'people' || c.id.includes('person') || c.id.includes('colaborador'));
+                return personCol?.text || i.name.split('-')[0].trim();
+            }))];
+
+            if (filterSelect) {
+                const current = filterSelect.value;
+                filterSelect.innerHTML = `<option value="ALL">Todos los Registros / Personas</option>`;
+                allPeople.forEach(p => filterSelect.innerHTML += `<option value="${p}">${p}</option>`);
+                filterSelect.value = current || 'ALL';
+            }
+
+            const timelineCol = boardMetadata.columns.find(c => c.type === 'timeline' || c.type === 'date');
+            const statusCol = boardMetadata.columns.find(c => c.type === 'status');
+
+            boardItems.forEach(item => {
+                let start = null;
+                let end = null;
+
+                if (timelineCol) {
+                    const tv = item.column_values.find(v => v.id === timelineCol.id);
+                    if (tv) {
+                        start = tv.from || tv.date;
+                        end = tv.to || tv.date;
+                        if (!start && tv.text && tv.text.includes('-')) {
+                            const pts = tv.text.split('-').map(s=>s.trim());
+                            start = pts[0];
+                            end = pts[1] || pts[0];
+                        }
+                    }
+                }
+
+                if (!start) {
+                    const dateVal = item.column_values.find(v => v.type === 'date' || v.type === 'timeline');
+                    if (dateVal) {
+                        start = dateVal.from || dateVal.date;
+                        end = dateVal.to || dateVal.date;
+                    }
+                }
+
+                if (start) {
+                    const personName = item.name.split('-')[0].trim();
+                    if (filterPerson === 'ALL' || personName.includes(filterPerson) || item.name.includes(filterPerson)) {
+                        let inclusiveEnd = new Date(end || start);
+                        inclusiveEnd.setDate(inclusiveEnd.getDate() + 1);
+
+                        calendar.addEvent({
+                            id: item.id,
+                            title: item.name,
+                            start: start,
+                            end: inclusiveEnd.toISOString().split('T')[0],
+                            backgroundColor: '#3b82f6',
+                            extendedProps: { id: item.id }
+                        });
+                    }
+                }
+            });
+        }
+
+        function filterCalendarEvents() {
+            populateCalendar();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateConnectionStatus();
+
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listMonth'
+                },
+                buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', list: 'Lista' },
+                events: [],
+                eventClick: function(info) {
+                    openEditModal(info.event.extendedProps.id);
+                }
+            });
+
+            syncAllFromMonday(false);
+        });
+    </script>
+</body>
+</html>
