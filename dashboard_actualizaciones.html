@@ -370,6 +370,7 @@
           <option value="">— Seleccionar —</option>
           <option value="PEREZ">Jesús Alberto Pérez</option>
           <option value="SUAREZ">Víctor Suárez Ardila</option>
+            <option value="VARON">Anlli Liliana Varón</option>
         </select>
       </div>
       <div class="fg"><label>Justificación</label><textarea id="ot-reason" class="fi" placeholder="Motivo de las horas extras…"></textarea></div>
@@ -1017,7 +1018,7 @@ async function syncOT(e){
     for(const r of otList){
       pset(10+Math.round((i/otList.length)*85),`Enviando #${r.id}…`);
       const cv={};
-      const APR_IDX={PEREZ:0,SUAREZ:1};
+      const APR_IDX={PEREZ:0,SUAREZ:1,VARON:2};
       const EST_IDX={approved:1,rejected:2,pending:0};
       cv[COL.aprobador]={index:APR_IDX[r.ldr]??0};
       cv[COL.estado_apr]={index:EST_IDX[r.status]??0};

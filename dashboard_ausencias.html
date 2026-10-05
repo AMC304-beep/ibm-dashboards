@@ -574,6 +574,9 @@ function renderTable(items) {
     let crono = '';
     if(raw){ try{ const tl=JSON.parse(raw); crono=(tl.from||'')+' / '+(tl.to||''); }catch(ex){} }
     const dias = getColVal(it,'numeric_mm7gf0nh');
+      const _adcarTotals = typeof calItems !== 'undefined' ? getAdcarTotals(calItems) : {};
+      const _totalAdcar = _adcarTotals[it.name] ? _adcarTotals[it.name].dias : (parseFloat(dias)||0);
+      const _estadoAdcar = _adcarTotals[it.name] ? _adcarTotals[it.name].estado : (getColVal(it,'color_mm7gg2a7')||'—');
     const estado = getColVal(it,'color_mm7gg2a7');
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 cursor-pointer transition-colors';
@@ -584,6 +587,8 @@ function renderTable(items) {
       +'<td class="px-3 py-2.5 text-slate-500 text-[10px]">'+crono+'</td>'
       +'<td class="px-3 py-2.5 font-semibold text-slate-700">'+dias+'</td>'
       +'<td class="px-3 py-2.5">'+statusBadge(estado)+'</td>'
+      +'<td class="px-3 py-2.5 text-center font-bold text-blue-700">'+(_totalAdcar||'—')+'</td>'
+      +'<td class="px-3 py-2.5 text-center">'+(_estadoAdcar||'—')+'</td>'
       +'<td class="px-3 py-2.5 text-right"><button onclick="openEditModal(\''+it.id+'\')" style="font-size:10px;padding:4px 10px;background:#e8f0fe;color:#0f62fe;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Editar</button></td>';
     tbody.appendChild(tr);
   });
@@ -779,6 +784,21 @@ function ausHandleFiles(files) {
 function ausRemoveFile(i) {
   ausFiles.splice(i,1);
   ausHandleFiles([]);
+}
+
+
+// Helper: calcula total días y estado por ADCAR en el cronograma
+function getAdcarTotals(items) {
+  const totals = {};
+  items.forEach(it => {
+    const nombre = it.name;
+    const dias = parseFloat(getColVal(it, 'numeric_mm7gf0nh')) || 0;
+    const estado = getColVal(it, 'color_mm7gg2a7') || '';
+    if (!totals[nombre]) totals[nombre] = { dias: 0, estado: '' };
+    totals[nombre].dias += dias;
+    totals[nombre].estado = estado; // último estado registrado
+  });
+  return totals;
 }
 
 function populateCalendar() {
