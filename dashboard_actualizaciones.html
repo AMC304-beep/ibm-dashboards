@@ -1166,11 +1166,14 @@ async function syncOTFromMonday(){
       const date=parts[2]||'';
       // Ignorar HE propias de los líderes
       const normAdcar=norm(adcar);
-      const isLiderOwnHE=
-        normAdcar.includes('victor')&&normAdcar.includes('suarez')||
-        normAdcar.includes('jesus')&&normAdcar.includes('perez')||
-        normAdcar.includes('anlli')&&normAdcar.includes('varon');
-      if(isLiderOwnHE&&otRole==='apr') return;
+      // Solo descartar HE del propio líder autenticado (no las de otros líderes)
+      if(otRole==='apr'&&currentLider){
+        let isOwnHE=false;
+        if(currentLider==='PEREZ'&&normAdcar.includes('jesus')&&normAdcar.includes('perez'))isOwnHE=true;
+        if(currentLider==='SUAREZ'&&normAdcar.includes('victor')&&normAdcar.includes('suarez'))isOwnHE=true;
+        if(currentLider==='VARON'&&normAdcar.includes('anlli')&&normAdcar.includes('varon'))isOwnHE=true;
+        if(isOwnHE) return;
+      }
       // Buscar por mondayId primero (más confiable)
       const existingById=otList.find(r=>r.mondayId===it.id);
       if(existingById){
