@@ -1090,6 +1090,13 @@ async function syncOTFromMonday(){
           else if(aprTxt2.includes('suarez')||aprTxt2.includes('victor'))existingByName.ldr='SUAREZ';
           else if(aprTxt2.includes('varon')||aprTxt2.includes('anlli'))existingByName.ldr='VARON';
         }
+        // Actualizar ldr si estaba vacío
+        if(!existingByName.ldr){
+          const aprTxt2=norm(cv[COL.aprobador]||'');
+          if(aprTxt2.includes('perez')||aprTxt2.includes('jesus'))existingByName.ldr='PEREZ';
+          else if(aprTxt2.includes('suarez')||aprTxt2.includes('victor'))existingByName.ldr='SUAREZ';
+          else if(aprTxt2.includes('varon')||aprTxt2.includes('anlli'))existingByName.ldr='VARON';
+        }
       } else if(adcar){
         // Solo agregar si NO es una HE de un líder que ya tiene solicitudes locales
         const isLiderOwnHE=['Jesus Alberto Perez','Victor Suarez','Anlli Liliana Varón'].some(n=>adcar===n);
