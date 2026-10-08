@@ -877,7 +877,9 @@ async function syncSlide1(e){
 let otList=[],otIdx=1,otLast=null,otRole='col';
 const LDRS={PEREZ:'Jesús Alberto Pérez',SUAREZ:'Víctor Suárez Ardila'};
 // Contraseña única de líderes
-const LIDER_PWD='LIDER_2026';
+// Contraseñas individuales por líder
+const LIDER_PWDS={PEREZ:'JesusIBM2026',SUAREZ:'VictorIBM2026',VARON:'AnlliIBM2026'};
+let currentLider=null;
 let _liderPwdCallback=null; // función a ejecutar tras autenticación exitosa
 
 function reqLiderPwd(radioEl){
@@ -892,12 +894,13 @@ function reqLiderPwd(radioEl){
 }
 function confirmLiderPwd(){
   const v=document.getElementById('liderPwdInput').value.trim();
-  const validLider=v===LIDER_PWD;
-  if(!validLider){
+  const liderKey=Object.keys(LIDER_PWDS).find(k=>LIDER_PWDS[k]===v);
+  if(!liderKey){
     const e=document.getElementById('liderPwdErr');
     e.textContent='❌ Contraseña incorrecta.';e.style.display='block';
     return;
   }
+  currentLider=liderKey;
   closeM('mLiderPwd');
   if(_liderPwdCallback){_liderPwdCallback(true);_liderPwdCallback=null;}
 }
@@ -958,7 +961,7 @@ function setOTRole(v){
   otRole=v;
   document.getElementById('ot-form').style.display=v==='apr'?'none':'block';
   document.getElementById('ot-apr').style.display=v==='apr'?'block':'none';
-  if(v==='col')updMyOT();
+  if(v==='col'){currentLider=null;updMyOT();}
   renderQueue();
 }
 function updMyOT(){
@@ -980,7 +983,7 @@ function renderQueue(){
   const c=document.getElementById('ot-queue');
   if(!otList.length){c.innerHTML='<div style="text-align:center;padding:26px;color:var(--muted);font-size:12px;">📭 Sin solicitudes</div>';updOTStats();return;}
   c.innerHTML='';
-  otList.forEach(r=>{
+  otList.filter(r=>!currentLider||r.ldr===currentLider).forEach(r=>{
     const sc={pending:'sb-pend',approved:'sb-ok',rejected:'sb-err'}[r.status];
     const sl={pending:'⏳ Pendiente',approved:'✅ Aprobada',rejected:'❌ Rechazada'}[r.status];
     const d=document.createElement('div');d.className='req';
@@ -995,10 +998,27 @@ function renderQueue(){
   });
   updOTStats();
 }
-function resolveOT(id,status){
+async function resolveOT(id,status){
   const r=otList.find(x=>x.id===id);if(!r||r.status!=='pending')return;
-  r.status=status;renderQueue();updMyOT();
+  r.status=status;
+  r.approvedBy=currentLider||r.ldr;
+  renderQueue();updMyOT();
   showToast(status==='approved'?`✅ Solicitud #${id} aprobada`:`❌ Solicitud #${id} rechazada`,status==='approved'?'ok':'err');
+  if(r.mondayId){
+    try{
+      const EST_IDX={approved:1,rejected:2,pending:0};
+      const APR_IDX={PEREZ:0,SUAREZ:1,VARON:3};
+      const cv={};
+      cv[COL.estado_apr]={index:EST_IDX[status]??0};
+      cv[COL.aprobador]={index:APR_IDX[r.approvedBy]??0};
+      const colStr=JSON.stringify(JSON.stringify(cv));
+      await mq(`mutation{change_multiple_column_values(board_id:${BOARD_A},item_id:${r.mondayId},column_values:${colStr}){id}}`);
+      r.synced=true;
+      showToast(`✅ Monday actualizado — Solicitud #${id}`,'ok');
+    }catch(err){
+      showToast(`⚠️ Error Monday: ${err.message}`,'err');
+    }
+  }
 }
 function updOTStats(){
   document.getElementById('ot-np').textContent=otList.filter(r=>r.status==='pending').length;
@@ -1053,11 +1073,23 @@ async function syncOTFromMonday(){
       // Match to local request by ADCAR in item name
       const parts=it.name.split('·').map(s=>s.trim());
       const adcar=parts[1]||'';
-      const existing=otList.find(r=>r.adcar===adcar&&r.status==='pending');
-      if(existing&&status!=='pending'){existing.status=status;}
-      else if(!existing&&adcar){
-        const hrs=parseFloat(cv[COL.horas_extras])||0;
-        otList.push({id:otIdx++,adcar,email:'',date:parts[2]||'',ini:'',fin:'',total:hrs,ldr:'',reason:cv[COL.comentarios_he]||'',status,at:it.name});
+      // Buscar por mondayId primero, luego por adcar+fecha
+      const existingById=otList.find(r=>r.mondayId===it.id);
+      const existingByName=otList.find(r=>r.adcar===adcar&&r.date===(parts[2]||''));
+      if(existingById){
+        // Actualizar status si cambió
+        if(status!=='pending') existingById.status=status;
+      } else if(existingByName){
+        // Actualizar mondayId y status
+        existingByName.mondayId=it.id;
+        if(status!=='pending') existingByName.status=status;
+      } else if(adcar){
+        // Solo agregar si NO es una HE de un líder que ya tiene solicitudes locales
+        const isLiderOwnHE=['Jesus Alberto Perez','Victor Suarez','Anlli Liliana Varón'].some(n=>adcar===n);
+        if(!isLiderOwnHE){
+          const hrs=parseFloat(cv[COL.horas_extras])||0;
+          otList.push({id:otIdx++,adcar,email:'',date:parts[2]||'',ini:'',fin:'',total:hrs,ldr:'',reason:cv[COL.comentarios_he]||'',status,mondayId:it.id,synced:true,at:it.name});
+        }
       }
     });
     renderQueue();updMyOT();
