@@ -344,6 +344,9 @@
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
       <input type="radio" name="otr" value="apr" onchange="reqLiderPwd(this)" style="accent-color:var(--accent);"/> 🔐 Aprobador (Líder)
     </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+      <input type="radio" name="otr" value="mis" onchange="reqLiderPwd(this)" style="accent-color:var(--accent);"/> 📊 Mis HE enviadas
+    </label>
   </div>
 
   <div class="ot-grid">
@@ -404,6 +407,19 @@
           Actualizar desde Monday
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Panel Mis HE (líder como colaborador) -->
+  <div class="g" id="ot-mis" style="display:none;padding:22px;margin-top:16px;">
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">📊 Mis Horas Extras enviadas a Anlli Liliana Varón</h3>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Estado de tus solicitudes enviadas para aprobación.</div>
+    <div id="ot-mis-queue"><div style="text-align:center;padding:28px;color:var(--muted);font-size:12px;">📭 Sin solicitudes</div></div>
+    <div style="margin-top:12px;">
+      <button class="btn btn-s" onclick="syncOTFromMonday()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Actualizar desde Monday
+      </button>
     </div>
   </div>
 </div>
@@ -959,12 +975,14 @@ function submitOT(){
 }
 function setOTRole(v){
   otRole=v;
-  document.getElementById('ot-form').style.display=v==='apr'?'none':'block';
+  document.getElementById('ot-form').style.display=v==='col'?'block':'none';
   document.getElementById('ot-apr').style.display=v==='apr'?'block':'none';
+  const misPanel=document.getElementById('ot-mis');
+  if(misPanel) misPanel.style.display=v==='mis'?'block':'none';
   if(v==='col'){currentLider=null;updMyOT();}
-  renderQueue();
-  // Al entrar como aprobador, cargar HE desde Monday automáticamente
   if(v==='apr') syncOTFromMonday();
+  if(v==='mis') renderMisHE();
+  renderQueue();
 }
 function updMyOT(){
   const box=document.getElementById('ot-my');
@@ -1029,6 +1047,48 @@ async function resolveOT(id,status){
     }
   }
 }
+function renderMisHE(){
+  // Cargar desde Monday las HE del líder autenticado como colaborador
+  const c=document.getElementById('ot-mis-queue');
+  if(!c||!currentLider) return;
+  // Nombre del líder actual para buscar en Monday
+  const LIDER_NAMES={
+    PEREZ:'jesus alberto perez',
+    SUAREZ:'victor',
+    VARON:'anlli'
+  };
+  const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  const myNorm=LIDER_NAMES[currentLider]||'';
+  // Filtrar HE donde el ADCAR es el líder actual
+  const misHE=otList.filter(r=>{
+    const n=norm(r.adcar);
+    if(currentLider==='PEREZ') return n.includes('jesus')&&n.includes('perez');
+    if(currentLider==='SUAREZ') return n.includes('victor')&&n.includes('suarez');
+    if(currentLider==='VARON') return n.includes('anlli')&&n.includes('varon');
+    return false;
+  });
+  if(!misHE.length){
+    c.innerHTML='<div style="text-align:center;padding:28px;color:var(--muted);font-size:12px;">📭 No tienes HE registradas</div>';
+    // Intentar cargar desde Monday
+    syncOTFromMonday();
+    return;
+  }
+  const sc={pending:'sb-pend',approved:'sb-ok',rejected:'sb-err'};
+  const sl={pending:'⏳ Pendiente',approved:'✅ Aprobada',rejected:'❌ Rechazada'};
+  c.innerHTML=misHE.map(r=>`
+    <div class="req" style="margin-bottom:10px;">
+      <div class="rh">
+        <div>
+          <div class="rn">${r.adcar} · ${r.date}</div>
+          <div class="rm">${r.ini||''}–${r.fin||''} · <strong>${r.total}h</strong> · Aprobador: ${LDRS[r.ldr]||r.ldr||'—'}</div>
+        </div>
+        <span class="sb ${sc[r.status]||'sb-pend'}">${sl[r.status]||'⏳ Pendiente'}</span>
+      </div>
+      <div class="rr">"${r.reason}"</div>
+    </div>
+  `).join('');
+}
+
 function updOTStats(){
   document.getElementById('ot-np').textContent=otList.filter(r=>r.status==='pending').length;
   document.getElementById('ot-na').textContent=otList.filter(r=>r.status==='approved').length;
@@ -1096,7 +1156,7 @@ async function syncOTFromMonday(){
         normAdcar.includes('victor')&&normAdcar.includes('suarez')||
         normAdcar.includes('jesus')&&normAdcar.includes('perez')||
         normAdcar.includes('anlli')&&normAdcar.includes('varon');
-      if(isLiderOwnHE) return;
+      if(isLiderOwnHE&&otRole==='apr') return;
       // Buscar por mondayId primero (más confiable)
       const existingById=otList.find(r=>r.mondayId===it.id);
       if(existingById){
@@ -1114,6 +1174,7 @@ async function syncOTFromMonday(){
       });
     });
     renderQueue();updMyOT();
+    if(otRole==='mis') renderMisHE();
     showToast('✅ Cola actualizada desde Monday','ok');
   }catch(err){showToast('❌ Error: '+err.message,'err');}
 }
