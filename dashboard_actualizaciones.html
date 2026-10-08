@@ -985,7 +985,7 @@ function setOTRole(v){
   if(misPanel) misPanel.style.display=v==='mis'?'block':'none';
   if(v==='col'){currentLider=null;updMyOT();}
   if(v==='apr') syncOTFromMonday();
-  if(v==='mis') renderMisHE();
+  if(v==='mis'){setTimeout(()=>renderMisHE(),100);}
   renderQueue();
 }
 function updMyOT(){
@@ -1051,46 +1051,56 @@ async function resolveOT(id,status){
     }
   }
 }
-function renderMisHE(){
-  // Cargar desde Monday las HE del líder autenticado como colaborador
+async function renderMisHE(){
   const c=document.getElementById('ot-mis-queue');
   if(!c||!currentLider) return;
-  // Nombre del líder actual para buscar en Monday
-  const LIDER_NAMES={
-    PEREZ:'jesus alberto perez',
-    SUAREZ:'victor',
-    VARON:'anlli'
+  c.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">⏳ Cargando…</div>';
+  const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  // Nombres reales en Monday para cada líder
+  const LIDER_ADCAR={
+    PEREZ: s=>norm(s).includes('jesus')&&norm(s).includes('perez'),
+    SUAREZ: s=>norm(s).includes('victor')&&norm(s).includes('suarez'),
+    VARON: s=>norm(s).includes('anlli')&&norm(s).includes('varon')
   };
-  const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
-  const myNorm=LIDER_NAMES[currentLider]||'';
-  // Filtrar HE donde el ADCAR es el líder actual
-  const misHE=otList.filter(r=>{
-    const n=norm(r.adcar);
-    if(currentLider==='PEREZ') return n.includes('jesus')&&n.includes('perez');
-    if(currentLider==='SUAREZ') return n.includes('victor')&&n.includes('suarez');
-    if(currentLider==='VARON') return n.includes('anlli')&&n.includes('varon');
-    return false;
-  });
-  if(!misHE.length){
-    c.innerHTML='<div style="text-align:center;padding:28px;color:var(--muted);font-size:12px;">📭 No tienes HE registradas</div>';
-    // Intentar cargar desde Monday
-    syncOTFromMonday();
-    return;
-  }
-  const sc={pending:'sb-pend',approved:'sb-ok',rejected:'sb-err'};
-  const sl={pending:'⏳ Pendiente',approved:'✅ Aprobada',rejected:'❌ Rechazada'};
-  c.innerHTML=misHE.map(r=>`
-    <div class="req" style="margin-bottom:10px;">
-      <div class="rh">
-        <div>
-          <div class="rn">${r.adcar} · ${r.date}</div>
-          <div class="rm">${r.ini||''}–${r.fin||''} · <strong>${r.total}h</strong> · Aprobador: ${LDRS[r.ldr]||r.ldr||'—'}</div>
+  const matchFn=LIDER_ADCAR[currentLider];
+  if(!matchFn){c.innerHTML='<div style="padding:20px;color:var(--muted);">Sin datos</div>';return;}
+  try{
+    const data=await mq(`{boards(ids:[${BOARD_A}]){items_page(limit:200){items{id name column_values(ids:["${COL.aprobador}","${COL.estado_apr}","${COL.horas_extras}","${COL.comentarios_he}"]){id text}}}}}`);
+    const items=data?.boards?.[0]?.items_page?.items||[];
+    const misItems=items.filter(it=>{
+      if(!it.name.startsWith('HE ·')) return false;
+      const parts=it.name.split('·').map(s=>s.trim());
+      return matchFn(parts[1]||'');
+    });
+    if(!misItems.length){
+      c.innerHTML='<div style="text-align:center;padding:28px;color:var(--muted);font-size:12px;">📭 No tienes HE registradas en Monday</div>';
+      return;
+    }
+    const sc={pending:'sb-pend',approved:'sb-ok',rejected:'sb-err'};
+    const sl={pending:'⏳ Pendiente',approved:'✅ Aprobada',rejected:'❌ Rechazada'};
+    c.innerHTML=misItems.map(it=>{
+      const cv={};it.column_values.forEach(col=>{cv[col.id]=col.text||'';});
+      const estTxt=cv[COL.estado_apr]||'En revisión';
+      const aprTxt=cv[COL.aprobador]||'—';
+      const hrs=cv[COL.horas_extras]||'—';
+      const parts=it.name.split('·').map(s=>s.trim());
+      let status='pending';
+      if(norm(estTxt).includes('aprobac')||norm(estTxt).includes('aprobad'))status='approved';
+      else if(norm(estTxt).includes('rechazad'))status='rejected';
+      return `<div class="req" style="margin-bottom:10px;">
+        <div class="rh">
+          <div>
+            <div class="rn">${parts[1]||'—'} · ${parts[2]||'—'}</div>
+            <div class="rm"><strong>${hrs}h</strong> · Aprobador: ${aprTxt}</div>
+          </div>
+          <span class="sb ${sc[status]||'sb-pend'}">${estTxt||sl[status]}</span>
         </div>
-        <span class="sb ${sc[r.status]||'sb-pend'}">${sl[r.status]||'⏳ Pendiente'}</span>
-      </div>
-      <div class="rr">"${r.reason}"</div>
-    </div>
-  `).join('');
+        <div class="rr">"${cv[COL.comentarios_he]||''}"</div>
+      </div>`;
+    }).join('');
+  }catch(err){
+    c.innerHTML=`<div style="padding:20px;color:var(--danger);">❌ Error: ${err.message}</div>`;
+  }
 }
 
 function updOTStats(){
