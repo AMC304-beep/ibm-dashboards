@@ -895,7 +895,7 @@ async function syncSlide1(e){
    SLIDE 2 — HORAS EXTRAS
    ══════════════════════ */
 let otList=[],otIdx=1,otLast=null,otRole='col';
-const LDRS={PEREZ:'Jesús Alberto Pérez',SUAREZ:'Víctor Suárez Ardila',VARON:'Anlli Liliana Varón'};
+const LDRS={PEREZ:'Jesus Perez',SUAREZ:'Victor Suarez',VARON:'Anlli Varón'};
 // Contraseña única de líderes
 // Contraseñas individuales por líder
 const LIDER_PWDS={PEREZ:'JesusIBM2026',SUAREZ:'VictorIBM2026',VARON:'AnlliIBM2026'};
@@ -1037,7 +1037,7 @@ async function resolveOT(id,status){
   showToast(status==='approved'?`✅ Solicitud #${id} aprobada`:`❌ Solicitud #${id} rechazada`,status==='approved'?'ok':'err');
   if(r.mondayId){
     try{
-      const APR_LABEL={PEREZ:'Jesus Alberto Perez',SUAREZ:'Victor Suarez',VARON:'Anlli Liliana Varón'};
+      const APR_LABEL={PEREZ:'Jesus Perez',SUAREZ:'Victor Suarez',VARON:'Anlli Varón'};
       const EST_LABEL={approved:'Aprobación',rejected:'Rechazadas',pending:'En revisión'};
       const cv={};
       cv[COL.estado_apr]={label:EST_LABEL[status]||'En revisión'};
@@ -1123,7 +1123,7 @@ async function syncOT(e){
     for(const r of pendingList){
       pset(10+Math.round((i/pendingList.length)*85),`Enviando #${r.id}…`);
       const cv={};
-      const APR_LABEL={PEREZ:'Jesus Alberto Perez',SUAREZ:'Victor Suarez',VARON:'Anlli Liliana Varón'};
+      const APR_LABEL={PEREZ:'Jesus Perez',SUAREZ:'Victor Suarez',VARON:'Anlli Varón'};
       const EST_LABEL={approved:'Aprobación',rejected:'Rechazadas',pending:'En revisión'};
       if(r.ldr&&APR_LABEL[r.ldr]) cv[COL.aprobador]={label:APR_LABEL[r.ldr]};
       else if(r.ldr) console.warn('APR_LABEL no tiene clave:',r.ldr);
