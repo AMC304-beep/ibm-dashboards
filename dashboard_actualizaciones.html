@@ -1037,11 +1037,11 @@ async function resolveOT(id,status){
   showToast(status==='approved'?`✅ Solicitud #${id} aprobada`:`❌ Solicitud #${id} rechazada`,status==='approved'?'ok':'err');
   if(r.mondayId){
     try{
-      const EST_IDX={approved:1,rejected:2,pending:0};
-      const APR_IDX={PEREZ:0,SUAREZ:1,VARON:3};
+      const APR_LABEL={PEREZ:'Jesus Alberto Perez',SUAREZ:'Victor Suarez',VARON:'Anlli Liliana Varón'};
+      const EST_LABEL={approved:'Aprobación',rejected:'Rechazadas',pending:'En revisión'};
       const cv={};
-      cv[COL.estado_apr]={index:EST_IDX[status]??0};
-      cv[COL.aprobador]={index:APR_IDX[r.approvedBy]??0};
+      cv[COL.estado_apr]={label:EST_LABEL[status]||'En revisión'};
+      if(r.approvedBy&&APR_LABEL[r.approvedBy]) cv[COL.aprobador]={label:APR_LABEL[r.approvedBy]};
       const colStr=JSON.stringify(JSON.stringify(cv));
       await mq(`mutation{change_multiple_column_values(board_id:${BOARD_A},item_id:${r.mondayId},column_values:${colStr}){id}}`);
       r.synced=true;
@@ -1123,10 +1123,10 @@ async function syncOT(e){
     for(const r of pendingList){
       pset(10+Math.round((i/pendingList.length)*85),`Enviando #${r.id}…`);
       const cv={};
-      const APR_IDX={PEREZ:0,SUAREZ:1,VARON:3};
-      const EST_IDX={approved:1,rejected:2,pending:0};
-      cv[COL.aprobador]={index:APR_IDX[r.ldr]??0};
-      cv[COL.estado_apr]={index:EST_IDX[r.status]??0};
+      const APR_LABEL={PEREZ:'Jesus Alberto Perez',SUAREZ:'Victor Suarez',VARON:'Anlli Liliana Varón'};
+      const EST_LABEL={approved:'Aprobación',rejected:'Rechazadas',pending:'En revisión'};
+      if(r.ldr&&APR_LABEL[r.ldr]) cv[COL.aprobador]={label:APR_LABEL[r.ldr]};
+      cv[COL.estado_apr]={label:EST_LABEL[r.status]||'En revisión'};
       cv[COL.horas_extras]=r.total;
       cv[COL.comentarios_he]=r.reason;
       if(r.date) cv[COL.fecha_he]={from:r.date,to:r.date};
