@@ -1079,8 +1079,14 @@ async function syncOTFromMonday(){
       const existingById=otList.find(r=>r.mondayId===it.id);
       const existingByName=otList.find(r=>r.adcar===adcar&&r.date===(parts[2]||''));
       if(existingById){
-        // Actualizar status si cambió
         if(status!=='pending') existingById.status=status;
+        // Actualizar ldr si estaba vacío
+        if(!existingById.ldr){
+          const aprTxtB=norm(cv[COL.aprobador]||'');
+          if(aprTxtB.includes('perez')||aprTxtB.includes('jesus'))existingById.ldr='PEREZ';
+          else if(aprTxtB.includes('suarez')||aprTxtB.includes('victor'))existingById.ldr='SUAREZ';
+          else if(aprTxtB.includes('varon')||aprTxtB.includes('anlli'))existingById.ldr='VARON';
+        }
       } else if(existingByName){
         // Actualizar mondayId y status
         existingByName.mondayId=it.id;
@@ -1101,7 +1107,12 @@ async function syncOTFromMonday(){
         }
       } else if(adcar){
         // Solo agregar si NO es una HE de un líder que ya tiene solicitudes locales
-        const isLiderOwnHE=['Jesus Alberto Perez','Victor Suarez','Anlli Liliana Varón'].some(n=>adcar===n);
+        // Usar norm() para comparar sin tildes y con variantes de nombre
+          const normAdcar=norm(adcar);
+          const isLiderOwnHE=
+            normAdcar.includes('victor') && normAdcar.includes('suarez') ||
+            normAdcar.includes('jesus') && normAdcar.includes('perez') ||
+            normAdcar.includes('anlli') && normAdcar.includes('varon');
         if(!isLiderOwnHE){
           const hrs=parseFloat(cv[COL.horas_extras])||0;
           // Recuperar ldr desde el texto del aprobador en Monday
