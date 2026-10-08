@@ -963,6 +963,8 @@ function setOTRole(v){
   document.getElementById('ot-apr').style.display=v==='apr'?'block':'none';
   if(v==='col'){currentLider=null;updMyOT();}
   renderQueue();
+  // Al entrar como aprobador, cargar HE desde Monday automáticamente
+  if(v==='apr') syncOTFromMonday();
 }
 function updMyOT(){
   const box=document.getElementById('ot-my');
