@@ -1083,12 +1083,25 @@ async function syncOTFromMonday(){
         // Actualizar mondayId y status
         existingByName.mondayId=it.id;
         if(status!=='pending') existingByName.status=status;
+        // Actualizar ldr si estaba vacío
+        if(!existingByName.ldr){
+          const aprTxt2=norm(cv[COL.aprobador]||'');
+          if(aprTxt2.includes('perez')||aprTxt2.includes('jesus'))existingByName.ldr='PEREZ';
+          else if(aprTxt2.includes('suarez')||aprTxt2.includes('victor'))existingByName.ldr='SUAREZ';
+          else if(aprTxt2.includes('varon')||aprTxt2.includes('anlli'))existingByName.ldr='VARON';
+        }
       } else if(adcar){
         // Solo agregar si NO es una HE de un líder que ya tiene solicitudes locales
         const isLiderOwnHE=['Jesus Alberto Perez','Victor Suarez','Anlli Liliana Varón'].some(n=>adcar===n);
         if(!isLiderOwnHE){
           const hrs=parseFloat(cv[COL.horas_extras])||0;
-          otList.push({id:otIdx++,adcar,email:'',date:parts[2]||'',ini:'',fin:'',total:hrs,ldr:'',reason:cv[COL.comentarios_he]||'',status,mondayId:it.id,synced:true,at:it.name});
+          // Recuperar ldr desde el texto del aprobador en Monday
+          const aprTxt=norm(cv[COL.aprobador]||'');
+          let ldrKey='';
+          if(aprTxt.includes('perez')||aprTxt.includes('jesus'))ldrKey='PEREZ';
+          else if(aprTxt.includes('suarez')||aprTxt.includes('victor'))ldrKey='SUAREZ';
+          else if(aprTxt.includes('varon')||aprTxt.includes('anlli'))ldrKey='VARON';
+          otList.push({id:otIdx++,adcar,email:'',date:parts[2]||'',ini:'',fin:'',total:hrs,ldr:ldrKey,reason:cv[COL.comentarios_he]||'',status,mondayId:it.id,synced:true,at:it.name});
         }
       }
     });
