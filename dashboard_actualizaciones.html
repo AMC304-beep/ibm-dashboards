@@ -1056,8 +1056,9 @@ async function syncOT(e){
       cv[COL.horas_extras]=r.total;
       cv[COL.comentarios_he]=r.reason;
       if(r.date) cv[COL.fecha_he]={from:r.date,to:r.date};
-      await mc(BOARD_A,`HE · ${r.adcar} · ${r.date}`,cv);i++;
-      r.synced=true;
+      const _mcR=await mc(BOARD_A,`HE · ${r.adcar} · ${r.date}`,cv);
+      if(_mcR&&_mcR.id) r.mondayId=_mcR.id;
+      r.synced=true;i++;
     }
     pset(100,'¡Listo!');setTimeout(phide,700);
     showToast(`✅ ${pendingList.length} solicitud(es) sincronizada(s)`,'ok');
