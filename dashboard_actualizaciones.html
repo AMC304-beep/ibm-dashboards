@@ -983,9 +983,16 @@ function updMyOT(){
 }
 function renderQueue(){
   const c=document.getElementById('ot-queue');
-  if(!otList.length){c.innerHTML='<div style="text-align:center;padding:26px;color:var(--muted);font-size:12px;">📭 Sin solicitudes</div>';updOTStats();return;}
   c.innerHTML='';
-  otList.filter(r=>!currentLider||r.ldr===currentLider).forEach(r=>{
+  // En modo aprobador: filtrar por líder y ordenar pendientes primero
+  const visibleList = otList
+    .filter(r=>!currentLider||r.ldr===currentLider)
+    .sort((a,b)=>{
+      const order={pending:0,approved:1,rejected:2};
+      return (order[a.status]??1)-(order[b.status]??1);
+    });
+  if(!visibleList.length){c.innerHTML='<div style="text-align:center;padding:26px;color:var(--muted);font-size:12px;">📭 Sin solicitudes pendientes</div>';updOTStats();return;}
+  visibleList.forEach(r=>{
     const sc={pending:'sb-pend',approved:'sb-ok',rejected:'sb-err'}[r.status];
     const sl={pending:'⏳ Pendiente',approved:'✅ Aprobada',rejected:'❌ Rechazada'}[r.status];
     const d=document.createElement('div');d.className='req';
