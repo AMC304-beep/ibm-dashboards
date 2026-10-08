@@ -1015,8 +1015,10 @@ async function syncOT(e){
     const LL={PEREZ:'Jesus Alberto Perez',SUAREZ:'Victor Suarez'};
     const EL={approved:'Aprobación',rejected:'Rechazadas',pending:'En revisión'};
     let i=0;
-    for(const r of otList){
-      pset(10+Math.round((i/otList.length)*85),`Enviando #${r.id}…`);
+    const pendingList = otList.filter(r=>!r.synced);
+    if(!pendingList.length){showToast('ℹ️ No hay solicitudes nuevas por sincronizar','inf');phide();return;}
+    for(const r of pendingList){
+      pset(10+Math.round((i/pendingList.length)*85),`Enviando #${r.id}…`);
       const cv={};
       const APR_IDX={PEREZ:0,SUAREZ:1,VARON:3};
       const EST_IDX={approved:1,rejected:2,pending:0};
@@ -1026,9 +1028,10 @@ async function syncOT(e){
       cv[COL.comentarios_he]=r.reason;
       if(r.date) cv[COL.fecha_he]={from:r.date,to:r.date};
       await mc(BOARD_A,`HE · ${r.adcar} · ${r.date}`,cv);i++;
+      r.synced=true;
     }
     pset(100,'¡Listo!');setTimeout(phide,700);
-    showToast(`✅ ${otList.length} solicitud(es) sincronizada(s)`,'ok');
+    showToast(`✅ ${pendingList.length} solicitud(es) sincronizada(s)`,'ok');
   }catch(err){phide();showToast('❌ Error: '+err.message,'err');}
   finally{btn.disabled=false;btn.innerHTML=orig;}
 }
