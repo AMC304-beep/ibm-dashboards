@@ -1071,66 +1071,46 @@ async function syncOTFromMonday(){
     const data=await mq(`{boards(ids:[${BOARD_A}]){items_page(limit:200){items{id name column_values(ids:["${COL.aprobador}","${COL.estado_apr}","${COL.horas_extras}","${COL.comentarios_he}"]){id text}}}}}`);
     const items=data?.boards?.[0]?.items_page?.items||[];
     const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-    const EL={};
     items.forEach(it=>{
       if(!it.name.startsWith('HE ·')) return;
       const cv={};it.column_values.forEach(c=>{cv[c.id]=c.text||'';});
+      // Determinar estado
       const estTxt=cv[COL.estado_apr]||'';
       let status='pending';
       if(norm(estTxt).includes('aprobac')||norm(estTxt).includes('aprobad'))status='approved';
       else if(norm(estTxt).includes('rechazad'))status='rejected';
-      // Match to local request by ADCAR in item name
+      // Determinar líder desde columna aprobador
+      const aprTxt=norm(cv[COL.aprobador]||'');
+      let ldrKey='';
+      if(aprTxt.includes('perez')||aprTxt.includes('jesus'))ldrKey='PEREZ';
+      else if(aprTxt.includes('suarez')||aprTxt.includes('victor'))ldrKey='SUAREZ';
+      else if(aprTxt.includes('varon')||aprTxt.includes('anlli'))ldrKey='VARON';
+      // Extraer partes del nombre
       const parts=it.name.split('·').map(s=>s.trim());
       const adcar=parts[1]||'';
-      // Buscar por mondayId primero, luego por adcar+fecha
+      const date=parts[2]||'';
+      // Ignorar HE propias de los líderes
+      const normAdcar=norm(adcar);
+      const isLiderOwnHE=
+        normAdcar.includes('victor')&&normAdcar.includes('suarez')||
+        normAdcar.includes('jesus')&&normAdcar.includes('perez')||
+        normAdcar.includes('anlli')&&normAdcar.includes('varon');
+      if(isLiderOwnHE) return;
+      // Buscar por mondayId primero (más confiable)
       const existingById=otList.find(r=>r.mondayId===it.id);
-      const existingByName=otList.find(r=>r.adcar===adcar&&r.date===(parts[2]||''));
       if(existingById){
-        if(status!=='pending') existingById.status=status;
-        // Actualizar ldr si estaba vacío
-        if(!existingById.ldr){
-          const aprTxtB=norm(cv[COL.aprobador]||'');
-          if(aprTxtB.includes('perez')||aprTxtB.includes('jesus'))existingById.ldr='PEREZ';
-          else if(aprTxtB.includes('suarez')||aprTxtB.includes('victor'))existingById.ldr='SUAREZ';
-          else if(aprTxtB.includes('varon')||aprTxtB.includes('anlli'))existingById.ldr='VARON';
-        }
-      } else if(existingByName){
-        // Actualizar mondayId y status
-        existingByName.mondayId=it.id;
-        if(status!=='pending') existingByName.status=status;
-        // Actualizar ldr si estaba vacío
-        if(!existingByName.ldr){
-          const aprTxt2=norm(cv[COL.aprobador]||'');
-          if(aprTxt2.includes('perez')||aprTxt2.includes('jesus'))existingByName.ldr='PEREZ';
-          else if(aprTxt2.includes('suarez')||aprTxt2.includes('victor'))existingByName.ldr='SUAREZ';
-          else if(aprTxt2.includes('varon')||aprTxt2.includes('anlli'))existingByName.ldr='VARON';
-        }
-        // Actualizar ldr si estaba vacío
-        if(!existingByName.ldr){
-          const aprTxt2=norm(cv[COL.aprobador]||'');
-          if(aprTxt2.includes('perez')||aprTxt2.includes('jesus'))existingByName.ldr='PEREZ';
-          else if(aprTxt2.includes('suarez')||aprTxt2.includes('victor'))existingByName.ldr='SUAREZ';
-          else if(aprTxt2.includes('varon')||aprTxt2.includes('anlli'))existingByName.ldr='VARON';
-        }
-      } else if(adcar){
-        // Solo agregar si NO es una HE de un líder que ya tiene solicitudes locales
-        // Usar norm() para comparar sin tildes y con variantes de nombre
-          const normAdcar=norm(adcar);
-          const isLiderOwnHE=
-            normAdcar.includes('victor') && normAdcar.includes('suarez') ||
-            normAdcar.includes('jesus') && normAdcar.includes('perez') ||
-            normAdcar.includes('anlli') && normAdcar.includes('varon');
-        if(!isLiderOwnHE){
-          const hrs=parseFloat(cv[COL.horas_extras])||0;
-          // Recuperar ldr desde el texto del aprobador en Monday
-          const aprTxt=norm(cv[COL.aprobador]||'');
-          let ldrKey='';
-          if(aprTxt.includes('perez')||aprTxt.includes('jesus'))ldrKey='PEREZ';
-          else if(aprTxt.includes('suarez')||aprTxt.includes('victor'))ldrKey='SUAREZ';
-          else if(aprTxt.includes('varon')||aprTxt.includes('anlli'))ldrKey='VARON';
-          otList.push({id:otIdx++,adcar,email:'',date:parts[2]||'',ini:'',fin:'',total:hrs,ldr:ldrKey,reason:cv[COL.comentarios_he]||'',status,mondayId:it.id,synced:true,at:it.name});
-        }
+        existingById.status=status;
+        if(!existingById.ldr&&ldrKey) existingById.ldr=ldrKey;
+        return;
       }
+      // Si no existe por mondayId, agregar siempre (cada fila de Monday es única por ID)
+      const hrs=parseFloat(cv[COL.horas_extras])||0;
+      otList.push({
+        id:otIdx++,adcar,email:'',date,ini:'',fin:'',
+        total:hrs,ldr:ldrKey,
+        reason:cv[COL.comentarios_he]||'',
+        status,mondayId:it.id,synced:true,at:it.name
+      });
     });
     renderQueue();updMyOT();
     showToast('✅ Cola actualizada desde Monday','ok');
