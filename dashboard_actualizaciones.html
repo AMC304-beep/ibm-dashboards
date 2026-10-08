@@ -903,10 +903,11 @@ let currentLider=null;
 let _liderPwdCallback=null; // función a ejecutar tras autenticación exitosa
 
 function reqLiderPwd(radioEl){
-  // Revertir el radio si cancela
+  // Recordar el rol que se seleccionó (apr o mis)
+  const selectedRole=radioEl?radioEl.value:'apr';
   _liderPwdCallback=function(ok){
     if(!ok){document.querySelector('input[name="otr"][value="col"]').checked=true;}
-    else{setOTRole('apr');}
+    else{setOTRole(selectedRole);}
   };
   document.getElementById('liderPwdInput').value='';
   document.getElementById('liderPwdErr').style.display='none';
