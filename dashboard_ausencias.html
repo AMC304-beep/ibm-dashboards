@@ -207,7 +207,8 @@
                    <th class="px-3 py-3">Total Días ADCAR</th>
                    <th class="px-3 py-3">Estado Aprobación</th>
                   <th class="px-3 py-3">Estado</th>
-                  <th class="px-3 py-3 text-right">Accion</th>
+                  <th class="px-3 py-3">Obs. Manager</th>
+<th class="px-3 py-3 text-right">Accion</th>
                 </tr>
               </thead>
               <tbody id="tableBody" class="divide-y divide-slate-50"></tbody>
@@ -317,6 +318,10 @@
       <div>
         <label class="block font-semibold text-slate-600 mb-1 uppercase tracking-wide text-[10px]">Observaciones</label>
         <textarea id="e_obs" rows="2" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-slate-50 resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-600 mb-1 uppercase tracking-wide text-[10px]">Observaciones Manager (solo lectura)</label>
+        <textarea id="e_obs_mgr" rows="2" readonly class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-slate-100 resize-none"></textarea>
       </div>
       <div class="p-3 rounded-xl border" style="background:#fef3c7;border-color:#fde68a;">
         <div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:8px;">Aprobacion - Anlli Liliana Varon (exclusivo)</div>
@@ -564,7 +569,7 @@ function renderTable(items) {
   const footer = document.getElementById('tableFooter');
   tbody.innerHTML = '';
   if(!items.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-10 text-center text-slate-400 text-xs">Sin datos</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="px-4 py-10 text-center text-slate-400 text-xs">Sin datos</td></tr>';
     footer.innerHTML = '';
     return;
   }
@@ -591,6 +596,7 @@ function renderTable(items) {
       +'<td class="px-3 py-2.5">'+statusBadge(estado)+'</td>'
       +'<td class="px-3 py-2.5 text-center font-bold text-blue-700">'+(_totalAdcar||'—')+'</td>'
       +'<td class="px-3 py-2.5 text-center">'+(_estadoAdcar||'—')+'</td>'
+      +'<td class="px-3 py-2.5 text-slate-600 text-[10px]" style="max-width:220px;white-space:normal;">'+String(getColVal(it,'text_mm821rme')||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</td>'
       +'<td class="px-3 py-2.5 text-right"><button onclick="openEditModal(\''+it.id+'\')" style="font-size:10px;padding:4px 10px;background:#e8f0fe;color:#0f62fe;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Editar</button></td>';
     tbody.appendChild(tr);
   });
@@ -695,6 +701,7 @@ function openEditModal(itemId) {
     document.getElementById('e_backup_email').value = '';
   }
   document.getElementById('e_obs').value = getColVal(item,'text_mm7g4np1');
+  const _om = document.getElementById('e_obs_mgr'); if(_om) _om.value = getColVal(item,'text_mm821rme');
   const estado = getColVal(item,'color_mm7gg2a7');
   document.getElementById('aprStatus').innerHTML = estado ? '<strong>Estado:</strong> '+estado : 'Sin estado aun';
   document.getElementById('editModal').classList.remove('hidden');
@@ -839,6 +846,17 @@ renderRegionOptions('c_region','');
 document.addEventListener('DOMContentLoaded', function() {
   syncAllFromMonday(false);
 });
+
+/* Auto-refresh: trae cambios de Monday (p.ej. Observaciones Manager) cada 45 s */
+setInterval(async function(){
+  try{
+    if(document.hidden) return;
+    const m = document.getElementById('editModal');
+    if(m && !m.classList.contains('hidden')) return;
+    await syncAllFromMonday(false);
+    if(typeof filterTable === 'function') filterTable();
+  }catch(e){}
+}, 45000);
 </script>
 </body>
 </html>

@@ -590,7 +590,7 @@ const COL = {
   soporte_time:'file_mm7hg5fg',sf:'color_mm7hdfqa',soporte_sf:'file_mm7hqp3m',
   hp:'status',soporte_hp:'file_mm7h43r0',comentarios:'text_mm7h6n1c',
   aprobador:'color_mm7mtfss',estado_apr:'color_mm7mtv3w',
-  horas_extras:'numeric_mm7mrmr6',comentarios_he:'text_mm7my82t',
+  horas_extras:'numeric_mm7mrmr6',comentarios_he:'text_mm7my82t',obs_manager:'text_mm82xpzv',
   fecha_he:'timerange_mm7m57ra'
 };
 /* Column IDs — Board 18433232131 (Modalidad) hardcoded — confirmados via API */
@@ -1025,6 +1025,7 @@ function renderQueue(){
       <span class="sb ${sc}">${sl}</span>
     </div>
     <div class="rr">"${r.reason}"</div>
+    ${r.obsManager?`<div style="font-size:11px;color:#7c3aed;margin:4px 0 6px;"><strong>Obs. Manager:</strong> ${String(r.obsManager).replace(/</g,'&lt;')}</div>`:''}
     ${otRole==='apr'&&r.status==='pending'?`<div style="display:flex;gap:8px;"><button class="btn btn-ok" style="padding:5px 13px;font-size:11px;" onclick="resolveOT(${r.id},'approved')">✅ Aprobar</button><button class="btn btn-err" style="padding:5px 13px;font-size:11px;" onclick="resolveOT(${r.id},'rejected')">❌ Rechazar</button></div>`:''}`;
     c.appendChild(d);
   });
@@ -1052,10 +1053,10 @@ async function resolveOT(id,status){
     }
   }
 }
-async function renderMisHE(){
+async function renderMisHE(silent){
   const c=document.getElementById('ot-mis-queue');
   if(!c||!currentLider) return;
-  c.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">⏳ Cargando…</div>';
+  if(silent!==true) c.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">⏳ Cargando…</div>';
   const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   // Nombres reales en Monday para cada líder
   const LIDER_ADCAR={
@@ -1066,7 +1067,7 @@ async function renderMisHE(){
   const matchFn=LIDER_ADCAR[currentLider];
   if(!matchFn){c.innerHTML='<div style="padding:20px;color:var(--muted);">Sin datos</div>';return;}
   try{
-    const data=await mq(`{boards(ids:[${BOARD_A}]){items_page(limit:200){items{id name column_values(ids:["${COL.aprobador}","${COL.estado_apr}","${COL.horas_extras}","${COL.comentarios_he}"]){id text}}}}}`);
+    const data=await mq(`{boards(ids:[${BOARD_A}]){items_page(limit:200){items{id name column_values(ids:["${COL.aprobador}","${COL.estado_apr}","${COL.horas_extras}","${COL.comentarios_he}","${COL.obs_manager}"]){id text}}}}}`);
     const items=data?.boards?.[0]?.items_page?.items||[];
     const misItems=items.filter(it=>{
       if(!it.name.startsWith('HE ·')) return false;
@@ -1097,6 +1098,7 @@ async function renderMisHE(){
           <span class="sb ${sc[status]||'sb-pend'}">${estTxt||sl[status]}</span>
         </div>
         <div class="rr">"${cv[COL.comentarios_he]||''}"</div>
+        ${cv[COL.obs_manager]?`<div style="font-size:11px;color:#7c3aed;margin-top:4px;"><strong>Obs. Manager:</strong> ${String(cv[COL.obs_manager]).replace(/</g,'&lt;')}</div>`:''}
       </div>`;
     }).join('');
   }catch(err){
@@ -1142,10 +1144,10 @@ async function syncOT(e){
   finally{btn.disabled=false;btn.innerHTML=orig;}
 }
 
-async function syncOTFromMonday(){
-  showToast('⏳ Actualizando cola desde Monday…','inf');
+async function syncOTFromMonday(silent){
+  if(silent!==true) showToast('⏳ Actualizando cola desde Monday…','inf');
   try{
-    const data=await mq(`{boards(ids:[${BOARD_A}]){items_page(limit:200){items{id name column_values(ids:["${COL.aprobador}","${COL.estado_apr}","${COL.horas_extras}","${COL.comentarios_he}"]){id text}}}}}`);
+    const data=await mq(`{boards(ids:[${BOARD_A}]){items_page(limit:200){items{id name column_values(ids:["${COL.aprobador}","${COL.estado_apr}","${COL.horas_extras}","${COL.comentarios_he}","${COL.obs_manager}"]){id text}}}}}`);
     const items=data?.boards?.[0]?.items_page?.items||[];
     const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
     items.forEach(it=>{
@@ -1180,6 +1182,7 @@ async function syncOTFromMonday(){
       const existingById=otList.find(r=>r.mondayId===it.id);
       if(existingById){
         existingById.status=status;
+        existingById.obsManager=cv[COL.obs_manager]||'';
         if(!existingById.ldr&&ldrKey) existingById.ldr=ldrKey;
         return;
       }
@@ -1189,18 +1192,28 @@ async function syncOTFromMonday(){
         id:otIdx++,adcar,email:'',date,ini:'',fin:'',
         total:hrs,ldr:ldrKey,
         reason:cv[COL.comentarios_he]||'',
+        obsManager:cv[COL.obs_manager]||'',
         status,mondayId:it.id,synced:true,at:it.name
       });
     });
     renderQueue();updMyOT();
-    if(otRole==='mis') renderMisHE();
-    showToast('✅ Cola actualizada desde Monday','ok');
+    if(otRole==='mis') renderMisHE(silent===true);
+    if(silent!==true) showToast('✅ Cola actualizada desde Monday','ok');
   }catch(err){showToast('❌ Error: '+err.message,'err');}
 }
 
 /* ══════════════════════
    SLIDE 3 — MODALIDAD
    ══════════════════════ */
+/* Auto-refresh HE: refleja cambios de Monday (p.ej. Observaciones Manager) cada 45 s */
+setInterval(function(){
+  try{
+    if(document.hidden||!currentLider) return;
+    if(otRole==='apr') syncOTFromMonday(true);
+    else if(otRole==='mis') renderMisHE(true);
+  }catch(e){}
+}, 45000);
+
 let modItems=[],modFilter='',modStatusF='';
 let modChart=null;
 let modLiderAuth=false;   // true una vez que el líder se autenticó en esta sesión
