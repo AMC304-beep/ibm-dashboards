@@ -350,6 +350,7 @@
   </div>
 
   <div class="ot-grid">
+    <div id="ot-obs-alert" style="display:none;"></div>
     <div class="g" style="padding:22px;" id="ot-form">
       <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;">➕ Nueva Solicitud</h3>
       <div class="notice">
@@ -980,6 +981,7 @@ function submitOT(){
 }
 function setOTRole(v){
   otRole=v;
+  setTimeout(function(){if(typeof heCheckObs==='function') heCheckObs();},0);
   document.getElementById('ot-form').style.display=v==='col'?'block':'none';
   document.getElementById('ot-apr').style.display=v==='apr'?'block':'none';
   const misPanel=document.getElementById('ot-mis');
@@ -1213,6 +1215,76 @@ setInterval(function(){
     else if(otRole==='mis') renderMisHE(true);
   }catch(e){}
 }, 45000);
+
+
+function _obsEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function _obsNorm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+function _obsReadMap(k){try{return JSON.parse(localStorage.getItem(k)||'{}');}catch(e){return {};}}
+function _obsBanner(rows,fnName){
+  var h='<div style="background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:12px 14px;margin-bottom:12px;">'
+    +'<div style="font-size:12px;font-weight:800;color:#9a3412;margin-bottom:6px;">&#9888; Tienes '+rows.length+(rows.length===1?' observaci&oacute;n':' observaciones')+' del manager por revisar</div>';
+  rows.forEach(function(r){
+    h+='<div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin-top:6px;">'
+      +'<div style="font-size:10px;color:#9a3412;font-weight:700;margin-bottom:2px;">'+_obsEsc(r.info)+'</div>'
+      +'<div style="font-size:12px;color:#1f2937;white-space:pre-wrap;">'+_obsEsc(r.obs)+'</div>'
+      +'<div style="text-align:right;margin-top:6px;"><button type="button" onclick="'+fnName+'(\''+_obsEsc(r.id)+'\')" style="font-size:10px;font-weight:700;padding:4px 10px;background:#ea580c;color:#fff;border:none;border-radius:6px;cursor:pointer;">Marcar como le&iacute;da</button></div>'
+      +'</div>';
+  });
+  return h+'</div>';
+}
+
+/* Alerta de Observaciones Manager para el colaborador (HE) */
+var _heObsCache={t:0,items:null};
+async function heCheckObs(force){
+  var box=document.getElementById('ot-obs-alert'), inp=document.getElementById('ot-adcar');
+  if(!box||!inp) return;
+  var q=_obsNorm(inp.value);
+  if(otRole!=='col'||q.length<3){box.style.display='none';box.innerHTML='';return;}
+  try{
+    if(force===true||!_heObsCache.items||Date.now()-_heObsCache.t>30000){
+      var data=await mq('{boards(ids:['+BOARD_A+']){items_page(limit:200){items{id name column_values(ids:["'+COL.obs_manager+'","'+COL.horas_extras+'","'+COL.estado_apr+'"]){id text}}}}}');
+      var its=(data&&data.boards&&data.boards[0]&&data.boards[0].items_page&&data.boards[0].items_page.items)||[];
+      _heObsCache={t:Date.now(),items:its};
+    }
+  }catch(e){return;}
+  if(_obsNorm(inp.value)!==q||otRole!=='col') return;
+  var read=_obsReadMap('obsRead_he');
+  var rows=[];
+  _heObsCache.items.forEach(function(it){
+    if(!it.name||it.name.indexOf('HE ')!==0) return;
+    var parts=it.name.split(/\s+[^\w\s]\s+/);
+    if(_obsNorm(parts[1]||'')!==q) return;
+    var cv={};(it.column_values||[]).forEach(function(c){cv[c.id]=c.text||'';});
+    var obs=cv[COL.obs_manager];
+    if(!obs||read[it.id]===obs) return;
+    var info='HE '+(parts[2]||'')+(cv[COL.horas_extras]?' \u00b7 '+cv[COL.horas_extras]+'h':'')+(cv[COL.estado_apr]?' \u00b7 '+cv[COL.estado_apr]:'');
+    rows.push({id:it.id,obs:obs,info:info});
+  });
+  if(!rows.length){box.style.display='none';box.innerHTML='';return;}
+  box.innerHTML=_obsBanner(rows,'heMarkObs');
+  box.style.display='block';
+}
+function heMarkObs(id){
+  var it=(_heObsCache.items||[]).find(function(x){return x.id===id;});
+  if(!it) return;
+  var cv={};(it.column_values||[]).forEach(function(c){cv[c.id]=c.text||'';});
+  var r=_obsReadMap('obsRead_he');
+  r[id]=cv[COL.obs_manager]||'';
+  try{localStorage.setItem('obsRead_he',JSON.stringify(r));}catch(e){}
+  heCheckObs();
+}
+(function(){
+  var t=null;
+  function init(){
+    var i=document.getElementById('ot-adcar');
+    if(i){
+      i.addEventListener('input',function(){clearTimeout(t);t=setTimeout(function(){heCheckObs();},600);});
+      i.addEventListener('change',function(){heCheckObs();});
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  setInterval(function(){if(!document.hidden&&otRole==='col') heCheckObs(true);},45000);
+})();
 
 let modItems=[],modFilter='',modStatusF='';
 let modChart=null;

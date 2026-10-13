@@ -95,6 +95,7 @@
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <h2 class="text-sm font-bold text-slate-900 mb-1">Nueva Solicitud</h2>
           <p class="text-[11px] text-slate-400 mb-4">Board 18432588237 — Forecast Ausencias</p>
+          <div id="obsAlert" style="display:none;"></div>
           <form id="createForm" onsubmit="handleCreateItem(event)" class="space-y-3 text-xs">
             <div>
               <label class="block font-semibold text-slate-600 mb-1 uppercase tracking-wide text-[10px]">ADCAR *</label>
@@ -450,6 +451,7 @@ async function syncAllFromMonday(showMsg) {
     renderKPIs();
     renderTable(allItems);
     renderCharts();
+    if(typeof ausCheckObs==='function') ausCheckObs();
     if(showMsg) showToast('Sincronizado correctamente', true);
   } catch(e) {
     showToast('Error: '+e.message, false);
@@ -857,6 +859,56 @@ setInterval(async function(){
     if(typeof filterTable === 'function') filterTable();
   }catch(e){}
 }, 45000);
+
+function _obsEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function _obsNorm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+function _obsReadMap(k){try{return JSON.parse(localStorage.getItem(k)||'{}');}catch(e){return {};}}
+function _obsBanner(rows,fnName){
+  var h='<div style="background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:12px 14px;margin-bottom:12px;">'
+    +'<div style="font-size:12px;font-weight:800;color:#9a3412;margin-bottom:6px;">&#9888; Tienes '+rows.length+(rows.length===1?' observaci&oacute;n':' observaciones')+' del manager por revisar</div>';
+  rows.forEach(function(r){
+    h+='<div style="background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px;margin-top:6px;">'
+      +'<div style="font-size:10px;color:#9a3412;font-weight:700;margin-bottom:2px;">'+_obsEsc(r.info)+'</div>'
+      +'<div style="font-size:12px;color:#1f2937;white-space:pre-wrap;">'+_obsEsc(r.obs)+'</div>'
+      +'<div style="text-align:right;margin-top:6px;"><button type="button" onclick="'+fnName+'(\''+_obsEsc(r.id)+'\')" style="font-size:10px;font-weight:700;padding:4px 10px;background:#ea580c;color:#fff;border:none;border-radius:6px;cursor:pointer;">Marcar como le&iacute;da</button></div>'
+      +'</div>';
+  });
+  return h+'</div>';
+}
+
+/* Alerta de Observaciones Manager para el colaborador (Ausencias) */
+function ausCheckObs(){
+  var box=document.getElementById('obsAlert'), inp=document.getElementById('c_adcar');
+  if(!box||!inp) return;
+  var q=_obsNorm(inp.value);
+  if(q.length<3||typeof allItems==='undefined'){box.style.display='none';box.innerHTML='';return;}
+  var read=_obsReadMap('obsRead_aus');
+  var rows=[];
+  allItems.forEach(function(it){
+    if(_obsNorm(it.name)!==q) return;
+    var obs=getColVal(it,'text_mm821rme');
+    if(!obs||read[it.id]===obs) return;
+    var info=(getColVal(it,'status')||'Ausencia');
+    var raw=getColRaw(it,'timerange_mm7gjxra');
+    if(raw){try{var tl=JSON.parse(raw);info+=' \u00b7 '+(tl.from||'')+' / '+(tl.to||'');}catch(e){}}
+    rows.push({id:it.id,obs:obs,info:info});
+  });
+  if(!rows.length){box.style.display='none';box.innerHTML='';return;}
+  box.innerHTML=_obsBanner(rows,'ausMarkObs');
+  box.style.display='block';
+}
+function ausMarkObs(id){
+  var it=allItems.find(function(x){return x.id===id;});
+  if(!it) return;
+  var r=_obsReadMap('obsRead_aus');
+  r[id]=getColVal(it,'text_mm821rme');
+  try{localStorage.setItem('obsRead_aus',JSON.stringify(r));}catch(e){}
+  ausCheckObs();
+}
+(function(){
+  function init(){var i=document.getElementById('c_adcar'); if(i) i.addEventListener('input',ausCheckObs);}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
 </script>
 </body>
 </html>
